@@ -1,0 +1,144 @@
+'use server'
+
+import { revalidatePanel } from '@/lib/revalidate'
+import { withPanelGuard } from '@/lib/panel-guard'
+import { checkLimit } from '@/lib/limits'
+import { buildLimitError } from '@/lib/limit-errors'
+import { logOwnerAction } from '@/lib/panel/log-owner-action'
+import { TemplateInputSchema, TemplateUpdateSchema } from '@/lib/owner-validation'
+import { logger } from '@/lib/logger'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface TemplateInput {
+    name: string
+    template: string
+    is_default?: boolean
+    variables?: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Server Actions
+// ---------------------------------------------------------------------------
+
+export async function createTemplate(
+    input: TemplateInput
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, tenantId, appConfig } = await withPanelGuard({ requiredFlag: 'enable_whatsapp_checkout' })
+        const parsed = TemplateInputSchema.safeParse(input)
+        if (!parsed.success) {
+            return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' }
+        }
+        const validInput = parsed.data
+
+        const { count } = await supabase
+            .from('whatsapp_templates')
+            .select('*', { count: 'exact', head: true })
+            .eq('tenant_id', tenantId)
+
+        const limitCheck = checkLimit(appConfig.planLimits, 'max_whatsapp_templates', count ?? 0)
+        if (!limitCheck.allowed) {
+            return { success: false, error: buildLimitError('max_whatsapp_templates', limitCheck) }
+        }
+
+        // If this is the default, unset other defaults for this tenant
+        if (input.is_default) {
+            await supabase
+                .from('whatsapp_templates')
+                .update({ is_default: false })
+                .eq('tenant_id', tenantId)
+                .eq('is_default', true)
+        }
+
+        const { error } = await supabase
+            .from('whatsapp_templates')
+            .insert({
+                tenant_id: tenantId,
+                name: validInput.name,
+                template: validInput.template,
+                is_default: validInput.is_default ?? false,
+                variables: validInput.variables ?? [],
+            })
+
+        if (error) {
+            logger.error('[panel/messages] Create failed:', error)
+            return { success: false, error: error.message }
+        }
+
+        revalidatePanel('panel')
+        logOwnerAction(tenantId, 'whatsapp.create_template', { name: validInput.name, isDefault: validInput.is_default })
+        return { success: true }
+    } catch (err) {
+        logger.error('[panel/messages] Error:', err)
+        return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
+    }
+}
+
+export async function updateTemplate(
+    id: string,
+    updates: Partial<TemplateInput>
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, tenantId } = await withPanelGuard({ requiredFlag: 'enable_whatsapp_checkout' })
+        const parsed = TemplateUpdateSchema.safeParse(updates)
+        if (!parsed.success) {
+            return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' }
+        }
+        const validUpdates = parsed.data
+
+        if (validUpdates.is_default) {
+            await supabase
+                .from('whatsapp_templates')
+                .update({ is_default: false })
+                .eq('tenant_id', tenantId)
+                .eq('is_default', true)
+        }
+
+        const { error } = await supabase
+            .from('whatsapp_templates')
+            .update(validUpdates)
+            .eq('id', id)
+            .eq('tenant_id', tenantId)
+
+        if (error) {
+            logger.error('[panel/messages] Update failed:', error)
+            return { success: false, error: error.message }
+        }
+
+        revalidatePanel('panel')
+        logOwnerAction(tenantId, 'whatsapp.update_template', { templateId: id, fields: Object.keys(updates) })
+        return { success: true }
+    } catch (err) {
+        logger.error('[panel/messages] Error:', err)
+        return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
+    }
+}
+
+export async function deleteTemplate(
+    id: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, tenantId } = await withPanelGuard({ requiredFlag: 'enable_whatsapp_checkout' })
+
+        const { error } = await supabase
+            .from('whatsapp_templates')
+            .delete()
+            .eq('id', id)
+            .eq('tenant_id', tenantId)
+
+        if (error) {
+            logger.error('[panel/messages] Delete failed:', error)
+            return { success: false, error: error.message }
+        }
+
+        revalidatePanel('panel')
+        logOwnerAction(tenantId, 'whatsapp.delete_template', { templateId: id })
+        return { success: true }
+    } catch (err) {
+        logger.error('[panel/messages] Error:', err)
+        return { success: false, error: err instanceof Error ? err.message : 'Unknown error' }
+    }
+}

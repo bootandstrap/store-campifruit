@@ -1,0 +1,359 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ── Lint, Type Check, Build ─────────────────────
+  build:
+    if: github.repository != 'bootandstrap/storefront-template'
+    name: Lint, Type Check & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Architectural Gate (Sentrux) ────────────────
+      - name: Install Sentrux
+        run: curl -fsSL https://raw.githubusercontent.com/sentrux/sentrux/main/install.sh | sh
+
+      - name: Architecture check (Sentrux)
+        run: ~/.local/bin/sentrux gate .
+
+      # ── Governance SSOT Checks ──
+      - name: Shared package contract tests
+        run: pnpm --filter=@bootandstrap/shared test:run
+
+      - name: Governance sync check (inline ↔ shared)
+        run: bash scripts/sync-governance.sh --check
+
+      - name: Lint (zero warnings)
+        run: pnpm turbo lint --filter=storefront -- --max-warnings=0
+
+      - name: Type Check (shared + storefront)
+        run: pnpm turbo type-check
+
+      - name: Build storefront
+        run: pnpm turbo build --filter=storefront
+        env:
+          TENANT_ID: ci-build-tenant
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: placeholder
+          NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+          NEXT_PUBLIC_STORE_URL: https://placeholder.com
+          MEDUSA_BACKEND_URL: http://localhost:9000
+
+      - name: Check migration consistency
+        run: bash scripts/check-migration-order.sh
+
+      - name: Check schema ownership
+        run: |
+          SCRIPT="../scripts/check-schema-ownership.sh"
+          if [[ -f "$SCRIPT" ]]; then
+            bash "$SCRIPT" data-plane
+          else
+            echo "⚠️ Schema ownership script not in workspace — skipping"
+          fi
+  # ── RLS Static Analysis ──────────────────────────
+  rls-check:
+    if: github.repository != 'bootandstrap/storefront-template'
+    name: RLS Policy Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check RLS policies
+        run: bash scripts/check-rls.sh
+
+  # ── Unit & Integration Tests (Storefront) ───────
+  unit-tests:
+    if: github.repository != 'bootandstrap/storefront-template'
+    name: Unit Tests (Storefront)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        run: pnpm --filter=storefront test:run
+        env:
+          TENANT_ID: ci-test-tenant
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+
+      - name: Run tests with coverage
+        run: cd apps/storefront && pnpm test:run -- --coverage
+        env:
+          TENANT_ID: ci-test-tenant
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: apps/storefront/coverage/
+          retention-days: 14
+
+  # ── Medusa Backend Tests ────────────────────────
+  medusa-tests:
+    if: github.repository != 'bootandstrap/storefront-template'
+    name: Medusa Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Medusa type-check
+        run: cd apps/medusa && npx tsc --noEmit
+
+      - name: Medusa build
+        run: cd apps/medusa && pnpm build
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          REDIS_URL: redis://localhost:6379
+          COOKIE_SECRET: ci-test-secret-32-chars-minimum!!
+          JWT_SECRET: ci-test-jwt-secret-minimum-32ch!
+
+      - name: Medusa unit tests
+        run: pnpm -C apps/medusa test:unit
+
+  # ── E2E Tests (Playwright) ─────────────────────
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build, unit-tests]
+    # Only run on PRs to main
+    if: github.event_name == 'pull_request'
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: cd apps/storefront && npx playwright install --with-deps chromium
+
+      - name: Build storefront
+        run: pnpm turbo build --filter=storefront
+        env:
+          TENANT_ID: ${{ secrets.TEST_TENANT_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${{ secrets.TEST_MEDUSA_KEY }}
+          NEXT_PUBLIC_STORE_URL: http://localhost:3000
+          NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
+          MEDUSA_BACKEND_URL: http://localhost:9000
+
+      - name: Start Medusa backend
+        run: |
+          bash scripts/ci/start-medusa-stack.sh &
+          bash scripts/ci/wait-for-health.sh http://localhost:9000/health 120
+        env:
+          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+          REDIS_URL: redis://localhost:6379
+          COOKIE_SECRET: ci-test-secret-32-chars-minimum!!
+          JWT_SECRET: ci-test-jwt-secret-minimum-32ch!
+          MEDUSA_BACKEND_URL: http://localhost:9000
+
+      - name: Start storefront
+        run: |
+          cd apps/storefront
+          PORT=3000 node .next/standalone/server.js &
+          bash ../../scripts/ci/wait-for-health.sh http://localhost:3000/api/health 60
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.TEST_SUPABASE_ANON_KEY }}
+          MEDUSA_BACKEND_URL: http://localhost:9000
+          REDIS_URL: redis://localhost:6379
+          TENANT_ID: ${{ secrets.TEST_TENANT_ID }}
+
+      - name: Run E2E tests
+        run: cd apps/storefront && npx playwright test
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/storefront/playwright-report/
+          retention-days: 14
+
+      - name: Upload CI logs (on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ci-failure-logs
+          path: ci-logs/
+          retention-days: 7
+
+  # ── Lighthouse CI ──────────────────────────────
+  lighthouse:
+    if: github.repository != 'bootandstrap/storefront-template'
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    # Only run on PRs to main
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@latest
+
+      - name: Build storefront
+        run: pnpm turbo build --filter=storefront
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: placeholder
+          NEXT_PUBLIC_STORE_URL: http://localhost:3000
+          MEDUSA_BACKEND_URL: http://localhost:9000
+
+      - name: Run Lighthouse CI
+        run: |
+          cd apps/storefront
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: apps/storefront/.lighthouseci/
+          retention-days: 14
+
+  # ── Failure Notification ────────────────────────
+  notify-failure:
+    if: github.repository != 'bootandstrap/storefront-template'
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [build, unit-tests, medusa-tests]
+    if: failure()
+    steps:
+      - name: Send failure notification
+        run: |
+          if [ -n "${{ secrets.BSWEB_INTERNAL_API_TOKEN }}" ] && [ -n "${{ secrets.BSWEB_URL }}" ]; then
+            curl -s -X POST "${{ secrets.BSWEB_URL }}/api/admin/ci-notification" \
+              -H "Authorization: Bearer ${{ secrets.BSWEB_INTERNAL_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "repo": "${{ github.repository }}",
+                "workflow": "${{ github.workflow }}",
+                "status": "failure",
+                "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                "ref": "${{ github.ref }}",
+                "actor": "${{ github.actor }}"
+              }' && echo "✅ Notification sent" || echo "⚠️ Notification failed (non-blocking)"
+          else
+            echo "⚠️ BSWEB_URL or BSWEB_INTERNAL_API_TOKEN not configured — skipping notification"
+          fi

@@ -1,0 +1,815 @@
+'use client'
+
+/**
+ * Orders Management — Owner Panel (SOTA rewrite)
+ *
+ * Features:
+ * - Animated page entrance + staggered order list
+ * - Status filter tabs with animated indicator
+ * - Animated expand/collapse for order details
+ * - PanelConfirmDialog for fulfill / cancel / refund
+ * - PanelStatusBadge for order + fulfillment status
+ * - PanelPagination for shared pagination
+ */
+
+import { useState, useTransition, useEffect } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useToast } from '@/components/ui/Toaster'
+import {
+    Package, Search, ChevronDown, MapPin, CreditCard,
+    CheckCircle, Truck, ShoppingBag, RotateCcw, X,
+    Monitor, Receipt, Printer
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { PageEntrance, ListStagger, StaggerItem, ExpandableSection } from '@/components/panel/PanelAnimations'
+import PanelConfirmDialog, { useConfirmDialog } from '@/components/panel/PanelConfirmDialog'
+import PanelStatusBadge, { orderStatusVariant } from '@/components/panel/PanelStatusBadge'
+import PanelPagination from '@/components/panel/PanelPagination'
+import { SotaBentoGrid, SotaBentoItem } from '@/components/panel/sota/SotaBentoGrid'
+import { SotaGlassCard } from '@/components/panel/sota/SotaGlassCard'
+import { SotaMetric } from '@/components/panel/sota/SotaMetric'
+import { fulfillOrder, cancelOrder, refundOrder } from './actions'
+import { toIntlLocale } from '@/lib/i18n/intl-locale'
+import type { AdminOrderFull } from '@/lib/medusa/admin'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface OrderLabels {
+    title: string
+    subtitle: string
+    searchPlaceholder: string
+    all: string
+    pending: string
+    completed: string
+    canceled: string
+    noOrders: string
+    noOrdersDesc?: string
+    order: string
+    customer: string
+    date: string
+    items: string
+    total: string
+    status: string
+    viewDetail: string
+    fulfill: string
+    cancel: string
+    fulfillConfirm: string
+    cancelConfirm: string
+    refund: string
+    refundConfirm: string
+    refundAmount: string
+    refundHint: string
+    refundSuccess: string
+    shipping: string
+    taxes: string
+    discount: string
+    subtotal: string
+    shippingAddress: string
+    payment: string
+    fulfilled: string
+    notFulfilled: string
+    back: string
+    previous: string
+    next: string
+}
+
+interface Props {
+    orders: AdminOrderFull[]
+    totalCount: number
+    currentPage: number
+    pageSize: number
+    initialSearch: string
+    initialStatus: StatusFilter
+    initialChannel: ChannelFilter
+    metrics: {
+        pendingCount: number
+        completedCount: number
+        formattedRevenue: string
+        secondaryRevenues?: string
+        posOrderCount?: number
+        onlineOrderCount?: number
+    }
+    lang: string
+    labels: OrderLabels
+}
+
+type StatusFilter = 'all' | 'pending' | 'completed' | 'canceled'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function formatPrice(amount: number, currency: string | undefined, lang: string): string {
+    const safeCurrency = (currency || 'eur').toUpperCase()
+    return new Intl.NumberFormat(toIntlLocale(lang), {
+        style: 'currency',
+        currency: safeCurrency,
+    }).format((amount || 0) / 100)
+}
+
+function formatDate(dateStr: string, lang: string): string {
+    return new Date(dateStr).toLocaleDateString(toIntlLocale(lang), {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+
+function fulfillmentLabel(status: string): { label: string; variant: 'success' | 'pending' | 'neutral' } {
+    if (status === 'fulfilled' || status === 'shipped') {
+        return { label: status, variant: 'success' }
+    }
+    return { label: status || 'not_fulfilled', variant: 'pending' }
+}
+
+type ChannelFilter = 'all' | 'pos' | 'online'
+
+function getOrderChannel(order: AdminOrderFull): 'pos' | 'online' {
+    const meta = order.metadata as Record<string, unknown> | null
+    return meta?.source === 'pos' ? 'pos' : 'online'
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function OrdersClient({
+    orders,
+    totalCount,
+    currentPage,
+    pageSize,
+    initialSearch,
+    initialStatus,
+    initialChannel,
+    metrics,
+    lang,
+    labels,
+}: Props) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    const [isPending, startTransition] = useTransition()
+    const toast = useToast()
+
+    const [filter, setFilter] = useState<StatusFilter>(initialStatus)
+    const [channel, setChannel] = useState<ChannelFilter>(initialChannel)
+    const [search, setSearch] = useState(initialSearch)
+    const [expandedId, setExpandedId] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    const [refundingId, setRefundingId] = useState<string | null>(null)
+    const [refundAmount, setRefundAmount] = useState('')
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+    // ── Universal Persistence ───────────────────────────────────────────
+    useEffect(() => {
+        // If arriving with bare URL, parse session storage and restore
+        if (!searchParams.toString()) {
+            const saved = sessionStorage.getItem('panel-pedidos-query')
+            if (saved) {
+                router.replace(`${pathname}?${saved}`)
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    useEffect(() => {
+        // Automatically save meaningful query parameters
+        const query = searchParams.toString()
+        if (query) {
+            sessionStorage.setItem('panel-pedidos-query', query)
+        }
+    }, [searchParams])
+
+    // Client-side channel filtering (metadata isn't queryable server-side)
+    const filteredOrders = channel === 'all'
+        ? orders
+        : orders.filter(o => getOrderChannel(o) === channel)
+
+    // ── Confirm dialogs ─────────────────────────────────────────────────
+    const fulfillDialog = useConfirmDialog({
+        title: labels.fulfill,
+        description: labels.fulfillConfirm,
+        confirmLabel: labels.fulfill,
+        variant: 'info',
+    })
+    const cancelDialog = useConfirmDialog({
+        title: labels.cancel,
+        description: labels.cancelConfirm,
+        confirmLabel: labels.cancel,
+        variant: 'danger',
+    })
+    const refundDialog = useConfirmDialog({
+        title: labels.refund,
+        description: labels.refundConfirm,
+        confirmLabel: labels.refund,
+        variant: 'warning',
+    })
+
+    // ── Query helpers ───────────────────────────────────────────────────
+    const updateQuery = (updates: Record<string, string | undefined>) => {
+        const next = new URLSearchParams(searchParams.toString())
+        for (const [key, value] of Object.entries(updates)) {
+            if (!value) next.delete(key)
+            else next.set(key, value)
+        }
+        const query = next.toString()
+        router.push(query ? `${pathname}?${query}` : pathname)
+    }
+
+    const applySearch = () => {
+        const q = search.trim()
+        updateQuery({ q: q || undefined, page: '1' })
+    }
+
+    // ── Actions ─────────────────────────────────────────────────────────
+    const handleFulfill = (orderId: string) => {
+        fulfillDialog.confirm(() => {
+            startTransition(async () => {
+                const result = await fulfillOrder(orderId)
+                if (result.success) { router.refresh(); toast.success('✓') }
+                else { setError(result.error ?? 'Error'); toast.error(result.error ?? 'Error') }
+            })
+        })
+    }
+
+    const handleCancel = (orderId: string) => {
+        cancelDialog.confirm(() => {
+            startTransition(async () => {
+                const result = await cancelOrder(orderId)
+                if (result.success) { router.refresh(); toast.success('✓') }
+                else { setError(result.error ?? 'Error'); toast.error(result.error ?? 'Error') }
+            })
+        })
+    }
+
+    const handleRefund = (orderId: string, paymentId: string, maxAmount: number, currency: string) => {
+        const amountCents = Math.round(parseFloat(refundAmount) * 100)
+        if (isNaN(amountCents) || amountCents <= 0) {
+            toast.error('Invalid amount')
+            return
+        }
+        if (amountCents > maxAmount) {
+            toast.error(`Max: ${formatPrice(maxAmount, currency, lang)}`)
+            return
+        }
+        refundDialog.confirm(() => {
+            startTransition(async () => {
+                const result = await refundOrder(orderId, paymentId, amountCents)
+                if (result.success) {
+                    router.refresh()
+                    toast.success(labels.refundSuccess)
+                    setRefundingId(null)
+                    setRefundAmount('')
+                } else {
+                    setError(result.error ?? 'Error')
+                    toast.error(result.error ?? 'Error')
+                }
+            })
+        })
+    }
+
+    // ── Tab data ─────────────────────────────────────────────────────────
+    const tabs: { key: StatusFilter; label: string }[] = [
+        { key: 'all', label: labels.all },
+        { key: 'pending', label: labels.pending },
+        { key: 'completed', label: labels.completed },
+        { key: 'canceled', label: labels.canceled },
+    ]
+
+    return (
+        <PageEntrance className="space-y-8">
+
+            {/* Error banner */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm flex items-center justify-between"
+                    >
+                        <span>{error}</span>
+                        <button onClick={() => setError(null)} aria-label="Dismiss error" className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400">
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <SotaBentoGrid>
+                {/* Stats / Metrics */}
+                <SotaBentoItem colSpan={{ base: 12, sm: 4 }}>
+                    <SotaMetric
+                        label={labels.total}
+                        value={metrics.formattedRevenue}
+                        icon={<CreditCard className="w-5 h-5" />}
+                        glowColor="gold"
+                    />
+                    {metrics.secondaryRevenues && (
+                        <div className="mt-1 px-4 pb-1">
+                            <span className="text-[10px] font-semibold text-tx-muted">{metrics.secondaryRevenues}</span>
+                        </div>
+                    )}
+                </SotaBentoItem>
+                <SotaBentoItem colSpan={{ base: 12, sm: 4 }}>
+                    <SotaMetric
+                        label={labels.pending}
+                        value={metrics.pendingCount}
+                        icon={<Package className="w-5 h-5" />}
+                        glowColor="warning"
+                    />
+                </SotaBentoItem>
+                <SotaBentoItem colSpan={{ base: 12, sm: 4 }}>
+                    <SotaMetric
+                        label={labels.completed}
+                        value={metrics.completedCount}
+                        icon={<CheckCircle className="w-5 h-5" />}
+                        glowColor="emerald"
+                    />
+                </SotaBentoItem>
+
+                {/* Orders List Context */}
+                <SotaBentoItem colSpan={12}>
+                    <div className="space-y-4">
+                        {/* Filter tabs + Search */}
+                        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                            <div className="flex gap-1 bg-sf-0/50 backdrop-blur-md rounded-xl border border-sf-3/30 shadow-inner p-1">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => {
+                                setFilter(tab.key)
+                                updateQuery({
+                                    status: tab.key === 'all' ? undefined : tab.key,
+                                    page: '1',
+                                })
+                            }}
+                            aria-pressed={filter === tab.key}
+                            className={`relative px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-med focus-visible:ring-offset-1 ${
+                                filter === tab.key
+                                    ? 'text-brand'
+                                    : 'text-tx-muted hover:text-tx-sec'
+                            }`}
+                        >
+                            {filter === tab.key && (
+                                <motion.div
+                                    layoutId="order-tab-indicator"
+                                    className="absolute inset-0 bg-white dark:bg-sf-2 rounded-lg shadow-sm"
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                />
+                            )}
+                            <span className="relative z-10">{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Channel filter — POS vs Online */}
+                <div className="flex gap-1 bg-sf-0/50 backdrop-blur-md rounded-xl border border-sf-3/30 shadow-inner p-1">
+                    {([{ key: 'all', label: 'All', count: undefined }, { key: 'pos', label: 'POS', count: metrics.posOrderCount }, { key: 'online', label: 'Online', count: metrics.onlineOrderCount }] as { key: ChannelFilter; label: string; count?: number }[]).map(ch => (
+                        <button
+                            key={ch.key}
+                            onClick={() => {
+                                setChannel(ch.key)
+                                updateQuery({ channel: ch.key === 'all' ? undefined : ch.key, page: '1' })
+                            }}
+                            aria-pressed={channel === ch.key}
+                            className={`relative px-3 py-2 rounded-lg text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-med ${
+                                channel === ch.key
+                                    ? 'text-brand bg-white dark:bg-sf-2 shadow-sm'
+                                    : 'text-tx-muted hover:text-tx-sec'
+                            }`}
+                        >
+                            <span className="flex items-center gap-1.5">
+                                {ch.key === 'pos' && <Receipt className="w-3 h-3" />}
+                                {ch.key === 'online' && <Monitor className="w-3 h-3" />}
+                                {ch.label}
+                                {ch.count !== undefined && <span className="tabular-nums opacity-60">({ch.count})</span>}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-tx-muted" />
+                    <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') applySearch() }}
+                        placeholder={labels.searchPlaceholder}
+                        aria-label={labels.searchPlaceholder}
+                        className="pl-9 pr-4 py-2.5 min-h-[44px] rounded-xl bg-sf-0/50 backdrop-blur-md border border-sf-3/30 shadow-inner text-sm focus:outline-none focus:ring-2 focus:ring-soft transition-all w-full sm:w-64"
+                    />
+                </div>
+            </div>
+
+            {/* Orders list */}
+            {filteredOrders.length === 0 ? (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                >
+                    <SotaGlassCard glowColor="none" className="py-24 flex flex-col items-center justify-center text-center">
+                        <div className="w-20 h-20 rounded-full bg-sf-1/50 border border-sf-3/30 flex items-center justify-center mb-6 shadow-sm">
+                            {search ? (
+                                <Search className="w-10 h-10 text-tx-muted opacity-50" />
+                            ) : channel === 'pos' ? (
+                                <Receipt className="w-10 h-10 text-emerald-500/50" />
+                            ) : (
+                                <ShoppingBag className="w-10 h-10 text-brand/50" />
+                            )}
+                        </div>
+                        <h3 className="text-xl font-bold font-display text-tx mb-2">
+                            {search ? 'No search results' : labels.noOrders}
+                        </h3>
+                        <p className="text-sm text-tx-sec max-w-sm mx-auto leading-relaxed mb-6">
+                            {search
+                                ? `We couldn't find any orders matching "${search}". Try adjusting your search or filters.`
+                                : channel !== 'all'
+                                ? `You don't have any ${channel.toUpperCase()} orders yet in this view.`
+                                : (labels.noOrdersDesc || 'When customers place orders on your store or via POS, they will appear here.')}
+                        </p>
+                        {search && (
+                            <button
+                                onClick={() => { setSearch(''); updateQuery({ q: undefined, page: '1' }) }}
+                                className="px-5 py-2.5 rounded-xl bg-brand text-white font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
+                            >
+                                Clear search
+                            </button>
+                        )}
+                    </SotaGlassCard>
+                </motion.div>
+            ) : (
+                <ListStagger className="space-y-3 relative">
+                    {filteredOrders.map(order => {
+                        const isExpanded = expandedId === order.id
+                        const customerName = [order.customer?.first_name, order.customer?.last_name].filter(Boolean).join(' ') || order.email || '—'
+                        const fulfillment = fulfillmentLabel(order.fulfillment_status)
+
+                        return (
+                            <StaggerItem key={order.id}>
+                                <SotaGlassCard glowColor="none" overflowHidden className="p-0 transition-shadow hover:shadow-lg">
+                                    {/* Order row (clickable) */}
+                                    <button
+                                        onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                                        aria-expanded={isExpanded}
+                                        aria-label={`${labels.viewDetail} #${order.display_id}`}
+                                        className="w-full flex items-center justify-between px-5 py-4 min-h-[56px] hover:bg-sf-1 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-med focus-visible:ring-inset"
+                                    >
+                                        <div className="flex items-center gap-4 flex-wrap">
+                                            <span className="font-bold text-brand text-sm">
+                                                #{order.display_id}
+                                            </span>
+                                            {/* Channel badge */}
+                                            {getOrderChannel(order) === 'pos' ? (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                                    <Receipt className="w-2.5 h-2.5" />
+                                                    POS
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+                                                    <Monitor className="w-2.5 h-2.5" />
+                                                    Online
+                                                </span>
+                                            )}
+                                            <span className="text-sm text-tx-sec">
+                                                {customerName}
+                                            </span>
+                                            <span className="text-xs text-tx-muted hidden sm:inline">
+                                                {formatDate(order.created_at, lang)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-sm">
+                                                {formatPrice(order.total, order.currency_code, lang)}
+                                            </span>
+                                            <PanelStatusBadge
+                                                variant={orderStatusVariant(order.status)}
+                                                label={order.status}
+                                                dot
+                                                size="sm"
+                                            />
+                                            <PanelStatusBadge
+                                                variant={fulfillment.variant}
+                                                label={fulfillment.label}
+                                                icon={fulfillment.variant === 'success' ? <Truck className="w-3 h-3" /> : <Package className="w-3 h-3" />}
+                                                size="sm"
+                                            />
+                                            <motion.div
+                                                animate={{ rotate: isExpanded ? 180 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <ChevronDown className="w-4 h-4 text-tx-muted" />
+                                            </motion.div>
+                                        </div>
+                                    </button>
+
+                                    {/* Expanded detail — animated */}
+                                    <ExpandableSection isOpen={isExpanded}>
+                                        <div className="border-t border-sf-2 px-5 py-5 space-y-5 bg-sf-0/30">
+                                            {/* Items */}
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-tx-sec mb-3 flex items-center gap-2">
+                                                    <Package className="w-4 h-4" />
+                                                    {labels.items} ({order.items?.length ?? 0})
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {(order.items ?? []).map(item => (
+                                                        <div key={item.id} className="flex items-center gap-3 py-2">
+                                                            {item.thumbnail ? (
+                                                                // eslint-disable-next-line @next/next/no-img-element
+                                                                <img
+                                                                    src={item.thumbnail}
+                                                                    alt={item.title}
+                                                                    className="w-10 h-10 rounded-lg object-cover bg-sf-1"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-10 h-10 rounded-lg bg-sf-1 flex items-center justify-center">
+                                                                    <Package className="w-5 h-5 text-tx-muted" />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium text-tx truncate">{item.title}</p>
+                                                                {item.variant_title && (
+                                                                    <p className="text-xs text-tx-muted">{item.variant_title}</p>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-medium">
+                                                                    {item.quantity} × {formatPrice(item.unit_price, order.currency_code, lang)}
+                                                                </p>
+                                                                <p className="text-xs text-tx-muted">
+                                                                    {formatPrice(item.total, order.currency_code, lang)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Totals summary */}
+                                                <div className="mt-3 pt-3 border-t border-sf-2 space-y-1 text-sm">
+                                                    {(order.shipping_total ?? 0) > 0 && (
+                                                        <div className="flex justify-between text-tx-muted">
+                                                            <span>{labels.shipping}</span>
+                                                            <span>{formatPrice(order.shipping_total ?? 0, order.currency_code, lang)}</span>
+                                                        </div>
+                                                    )}
+                                                    {(order.tax_total ?? 0) > 0 && (
+                                                        <div className="flex justify-between text-tx-muted">
+                                                            <span>{labels.taxes}</span>
+                                                            <span>{formatPrice(order.tax_total ?? 0, order.currency_code, lang)}</span>
+                                                        </div>
+                                                    )}
+                                                    {(order.discount_total ?? 0) > 0 && (
+                                                        <div className="flex justify-between text-emerald-600">
+                                                            <span>{labels.discount}</span>
+                                                            <span>-{formatPrice(order.discount_total, order.currency_code, lang)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between font-bold text-tx pt-1">
+                                                        <span>{labels.total}</span>
+                                                        <span>{formatPrice(order.total, order.currency_code, lang)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Customer + Shipping + Payment */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {/* Customer */}
+                                                <div className="bg-sf-0/50 backdrop-blur-md rounded-xl border border-sf-3/30 shadow-sm p-4">
+                                                    <h5 className="text-xs font-semibold text-tx-muted uppercase tracking-wide mb-2">
+                                                        {labels.customer}
+                                                    </h5>
+                                                    <p className="text-sm font-medium text-tx">{customerName}</p>
+                                                    {order.customer?.email && (
+                                                        <p className="text-xs text-tx-muted mt-1">{order.customer.email}</p>
+                                                    )}
+                                                </div>
+
+                                                {/* Shipping address */}
+                                                {order.shipping_address && (
+                                                    <div className="bg-sf-0/50 backdrop-blur-md rounded-xl border border-sf-3/30 shadow-sm p-4">
+                                                        <h5 className="text-xs font-semibold text-tx-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+                                                            <MapPin className="w-3 h-3" />
+                                                            {labels.shippingAddress}
+                                                        </h5>
+                                                        <p className="text-sm text-tx">
+                                                            {[
+                                                                order.shipping_address.address_1,
+                                                                order.shipping_address.address_2,
+                                                            ].filter(Boolean).join(', ')}
+                                                        </p>
+                                                        <p className="text-xs text-tx-muted">
+                                                            {[
+                                                                order.shipping_address.postal_code,
+                                                                order.shipping_address.city,
+                                                                order.shipping_address.province,
+                                                            ].filter(Boolean).join(', ')}
+                                                        </p>
+                                                        {order.shipping_address.phone && (
+                                                            <p className="text-xs text-tx-muted mt-1 flex items-center gap-1">
+                                                                <span className="text-tx-muted">📱</span> {order.shipping_address.phone}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Payment */}
+                                                {order.payments?.length > 0 && (
+                                                    <div className="bg-sf-0/50 backdrop-blur-md rounded-xl border border-sf-3/30 shadow-sm p-4">
+                                                        <h5 className="text-xs font-semibold text-tx-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+                                                            <CreditCard className="w-3 h-3" />
+                                                            {labels.payment}
+                                                        </h5>
+                                                        {order.payments.map(p => (
+                                                            <div key={p.id} className="text-sm">
+                                                                <p className="font-medium text-tx capitalize">{p.provider_id.replace(/_/g, ' ')}</p>
+                                                                <p className="text-xs text-tx-muted">{formatPrice(p.amount, p.currency_code, lang)}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* POS Ticket Info (shown only for POS orders) */}
+                                            {getOrderChannel(order) === 'pos' && (() => {
+                                                const meta = order.metadata as Record<string, unknown> | null
+                                                return (
+                                                    <div className="bg-emerald-50/80 dark:bg-emerald-500/10 backdrop-blur-md rounded-xl border border-emerald-200/50 dark:border-emerald-500/20 shadow-sm p-4 relative">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <h5 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
+                                                                <Receipt className="w-3 h-3" />
+                                                                POS Ticket
+                                                            </h5>
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // SOTA IFRAME Print Fallback stub
+                                                                    // In a real implementation this would open an iframe with a clean print template
+                                                                    window.print();
+                                                                }}
+                                                                className="text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
+                                                                title="Download or Print Receipt"
+                                                            >
+                                                                <Printer className="w-3.5 h-3.5" />
+                                                                <span className="hidden sm:inline">Imprimir (Fallback)</span>
+                                                            </button>
+                                                        </div>
+                                                        <div className="space-y-2 text-sm">
+                                                            <div className="flex justify-between">
+                                                                <span className="text-tx-muted">Ticket #</span>
+                                                                <span className="font-mono font-bold text-tx">T-{String(order.display_id).padStart(5, '0')}</span>
+                                                            </div>
+                                                            {meta?.payment_method ? (
+                                                                <div className="flex justify-between">
+                                                                    <span className="text-tx-muted">Payment</span>
+                                                                    <span className="font-medium text-tx capitalize">{String(meta.payment_method)}</span>
+                                                                </div>
+                                                            ) : null}
+                                                            {meta?.operator ? (
+                                                                <div className="flex justify-between">
+                                                                    <span className="text-tx-muted">Operator</span>
+                                                                    <span className="font-medium text-tx">{String(meta.operator)}</span>
+                                                                </div>
+                                                            ) : null}
+                                                            {meta?.terminal_id ? (
+                                                                <div className="flex justify-between">
+                                                                    <span className="text-tx-muted">Terminal</span>
+                                                                    <span className="font-mono text-xs text-tx-sec">{String(meta.terminal_id)}</span>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })()}
+
+                                            {/* Actions */}
+                                            {order.status !== 'canceled' && (
+                                                <div className="flex flex-wrap gap-3 pt-2">
+                                                    {order.fulfillment_status !== 'fulfilled' && order.fulfillment_status !== 'shipped' && (
+                                                        <button
+                                                            onClick={() => handleFulfill(order.id)}
+                                                            disabled={isPending}
+                                                            aria-label={labels.fulfill}
+                                                            className="btn btn-primary inline-flex items-center gap-2 text-sm min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-med focus-visible:ring-offset-2"
+                                                        >
+                                                            <Truck className="w-4 h-4" />
+                                                            {isPending ? '...' : labels.fulfill}
+                                                        </button>
+                                                    )}
+                                                    {(order.fulfillment_status === 'fulfilled' || order.fulfillment_status === 'shipped') && (
+                                                        <span className="inline-flex items-center gap-1 text-sm text-emerald-600 font-medium">
+                                                            <CheckCircle className="w-4 h-4" />
+                                                            {labels.fulfilled}
+                                                        </span>
+                                                    )}
+                                                    {order.status === 'pending' && (
+                                                        <button
+                                                            onClick={() => handleCancel(order.id)}
+                                                            disabled={isPending}
+                                                            aria-label={labels.cancel}
+                                                            className="btn btn-ghost text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 inline-flex items-center gap-2 text-sm min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-2"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                            {isPending ? '...' : labels.cancel}
+                                                        </button>
+                                                    )}
+
+                                                    {/* Refund */}
+                                                    {order.payment_status === 'captured' && order.payments?.length > 0 && (
+                                                        <AnimatePresence mode="wait">
+                                                            {refundingId === order.id ? (
+                                                                <motion.div
+                                                                    key="refund-form"
+                                                                    initial={{ opacity: 0, width: 0 }}
+                                                                    animate={{ opacity: 1, width: 'auto' }}
+                                                                    exit={{ opacity: 0, width: 0 }}
+                                                                    className="flex items-center gap-2 bg-sf-1 border border-sf-3 backdrop-blur-md shadow-sm rounded-xl px-4 py-2"
+                                                                >
+                                                                    <label className="text-sm text-tx-sec whitespace-nowrap">
+                                                                        {labels.refundAmount} ({(order.currency_code || 'eur').toUpperCase()}):
+                                                                    </label>
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0.01"
+                                                                        step="0.01"
+                                                                        max={order.payments[0].amount / 100}
+                                                                        value={refundAmount}
+                                                                        onChange={e => setRefundAmount(e.target.value)}
+                                                                        placeholder={String(order.payments[0].amount / 100)}
+                                                                        className="w-24 px-3 py-1.5 rounded-lg border border-sf-3 bg-sf-0 text-sm focus:outline-none focus:ring-2 focus:ring-soft"
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => handleRefund(
+                                                                            order.id,
+                                                                            order.payments[0].id,
+                                                                            order.payments[0].amount,
+                                                                            order.currency_code
+                                                                        )}
+                                                                        disabled={isPending}
+                                                                        aria-label={labels.refund}
+                                                                        className="btn btn-primary text-sm py-1.5 min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-med focus-visible:ring-offset-1"
+                                                                    >
+                                                                        {isPending ? '...' : labels.refund}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => { setRefundingId(null); setRefundAmount('') }}
+                                                                        disabled={isPending}
+                                                                        aria-label={labels.cancel}
+                                                                        className="p-1.5 rounded-lg hover:bg-sf-1 text-tx-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-med"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                    </button>
+                                                                </motion.div>
+                                                            ) : (
+                                                                <motion.button
+                                                                    key="refund-btn"
+                                                                    initial={{ opacity: 0 }}
+                                                                    animate={{ opacity: 1 }}
+                                                                    onClick={() => {
+                                                                        setRefundingId(order.id)
+                                                                        setRefundAmount(String(order.payments[0].amount / 100))
+                                                                    }}
+                                                                    disabled={isPending}
+                                                                    className="btn btn-ghost text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 inline-flex items-center gap-2 text-sm"
+                                                                >
+                                                                    <RotateCcw className="w-4 h-4" />
+                                                                    {labels.refund}
+                                                                </motion.button>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </ExpandableSection>
+                                </SotaGlassCard>
+                            </StaggerItem>
+                        )
+                    })}
+                </ListStagger>
+            )}
+                    </div>
+                </SotaBentoItem>
+            </SotaBentoGrid>
+
+            {/* Pagination */}
+            {totalCount > pageSize && (
+                <PanelPagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => updateQuery({ page: String(page) })}
+                    labels={{ previous: labels.previous, next: labels.next }}
+                />
+            )}
+
+            {/* Confirm dialogs */}
+            <PanelConfirmDialog {...fulfillDialog.dialogProps} />
+            <PanelConfirmDialog {...cancelDialog.dialogProps} />
+            <PanelConfirmDialog {...refundDialog.dialogProps} />
+        </PageEntrance>
+    )
+}

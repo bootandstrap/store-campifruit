@@ -1,0 +1,3621 @@
+@import "tailwindcss";
+@source "../../src";
+
+/* ========================================================================
+   GLOBALS.CSS — A+D Architecture
+   - @theme inline: ALL tokens baked directly into utility classes (no var() deps)
+   - :root: Runtime CSS vars for component CSS
+   - No UUI dead weight — only 53 actually-used UUI tokens retained
+   Turbopack-safe: utility classes are self-contained, no :root chunk dependency
+   ======================================================================== */
+
+@import "../styles/untitled-ui/typography.css";
+
+@plugin "tailwindcss-react-aria-components";
+@plugin "tailwindcss-animate";
+
+/* Dark mode variant */
+@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+
+/* UUI label/focus variants */
+@custom-variant label (& [data-label]);
+@custom-variant focus-input-within (&:has(input:focus));
+
+/* UUI custom utilities */
+@utility scrollbar-hide {
+    &::-webkit-scrollbar {
+        display: none;
+        -webkit-appearance: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@utility transition-inherit-all {
+    transition-property: inherit;
+    transition-duration: inherit;
+    transition-timing-function: inherit;
+}
+
+/* =========================================================================
+   @theme inline — ALL tokens baked into utility classes.
+   Tailwind generates: .bg-brand { background-color: #2D5016; }
+   NOT: .bg-brand { background-color: var(--color-brand); }
+   This makes every utility self-contained — no :root chunk dependency.
+   ========================================================================= */
+@theme inline {
+    /* =======================================================================
+       FONTS
+       ======================================================================= */
+    --font-body: var(--font-inter, "Inter"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-display: var(--font-inter, "Inter"), -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-mono: ui-monospace, "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-sans: "Inter", "Avenir Next", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+
+    /* =======================================================================
+       FONT SIZES (use --spacing for consistency)
+       ======================================================================= */
+    --text-xs: calc(var(--spacing) * 3);
+    --text-xs--line-height: calc(var(--spacing) * 4.5);
+    --text-sm: calc(var(--spacing) * 3.5);
+    --text-sm--line-height: calc(var(--spacing) * 5);
+    --text-md: calc(var(--spacing) * 4);
+    --text-md--line-height: calc(var(--spacing) * 6);
+    --text-lg: calc(var(--spacing) * 4.5);
+    --text-lg--line-height: calc(var(--spacing) * 7);
+    --text-xl: calc(var(--spacing) * 5);
+    --text-xl--line-height: calc(var(--spacing) * 7.5);
+    --text-display-xs: calc(var(--spacing) * 6);
+    --text-display-xs--line-height: calc(var(--spacing) * 8);
+    --text-display-sm: calc(var(--spacing) * 7.5);
+    --text-display-sm--line-height: calc(var(--spacing) * 9.5);
+    --text-display-md: calc(var(--spacing) * 9);
+    --text-display-md--line-height: calc(var(--spacing) * 11);
+    --text-display-md--letter-spacing: -0.72px;
+    --text-display-lg: calc(var(--spacing) * 12);
+    --text-display-lg--line-height: calc(var(--spacing) * 15);
+    --text-display-lg--letter-spacing: -0.96px;
+    --text-display-xl: calc(var(--spacing) * 15);
+    --text-display-xl--line-height: calc(var(--spacing) * 18);
+    --text-display-xl--letter-spacing: -1.2px;
+    --text-display-2xl: calc(var(--spacing) * 18);
+    --text-display-2xl--line-height: calc(var(--spacing) * 22.5);
+    --text-display-2xl--letter-spacing: -1.44px;
+
+    /* =======================================================================
+       LAYOUT
+       ======================================================================= */
+    --max-width-container: 1280px;
+    --breakpoint-xxs: 320px;
+    --breakpoint-xs: 600px;
+
+    /* =======================================================================
+       RADIUS
+       ======================================================================= */
+    --radius-none: 0px;
+    --radius-xs: 0.125rem;
+    --radius-sm: 0.25rem;
+    --radius-DEFAULT: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius-3xl: 1.5rem;
+    --radius-full: 9999px;
+    --radius-card: 1rem;
+    --radius-button: 0.75rem;
+    --radius-pill: 9999px;
+
+    /* =======================================================================
+       SHADOWS
+       ======================================================================= */
+    --shadow-xs: 0px 1px 2px rgba(10, 13, 18, 0.05);
+    --shadow-sm: 0px 1px 3px rgba(10, 13, 18, 0.1), 0px 1px 2px -1px rgba(10, 13, 18, 0.1);
+    --shadow-md: 0px 4px 6px -1px rgba(10, 13, 18, 0.1), 0px 2px 4px -2px rgba(10, 13, 18, 0.06);
+    --shadow-lg: 0px 12px 16px -4px rgba(10, 13, 18, 0.08), 0px 4px 6px -2px rgba(10, 13, 18, 0.03), 0px 2px 2px -1px rgba(10, 13, 18, 0.04);
+    --shadow-xl: 0px 20px 24px -4px rgba(10, 13, 18, 0.08), 0px 8px 8px -4px rgba(10, 13, 18, 0.03), 0px 3px 3px -1.5px rgba(10, 13, 18, 0.04);
+    --shadow-2xl: 0px 24px 48px -12px rgba(10, 13, 18, 0.18), 0px 4px 4px -2px rgba(10, 13, 18, 0.04);
+    --shadow-3xl: 0px 32px 64px -12px rgba(10, 13, 18, 0.14), 0px 5px 5px -2.5px rgba(10, 13, 18, 0.04);
+    --shadow-skeumorphic: 0px 0px 0px 1px rgba(10, 13, 18, 0.18) inset, 0px -2px 0px 0px rgba(10, 13, 18, 0.05) inset;
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-card-hover: 0 10px 25px rgba(45, 80, 22, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --shadow-float: 0 20px 60px rgba(0, 0, 0, 0.15);
+
+    /* =======================================================================
+       ANIMATIONS
+       ======================================================================= */
+    --animate-marquee: marquee 60s linear infinite;
+    --animate-caret-blink: caret-blink 1s infinite;
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+    @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+    @keyframes caret-blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+    }
+
+    /* =======================================================================
+       SPACING EXTENSIONS
+       ======================================================================= */
+    --spacing-18: 4.5rem;
+    --spacing-22: 5.5rem;
+
+    /* =======================================================================
+       BASE COLORS
+       ======================================================================= */
+    --color-transparent: rgb(0 0 0 / 0);
+    --color-white: rgb(255 255 255);
+    --color-black: rgb(0 0 0);
+
+    /* =======================================================================
+       SOTA BRAND TOKENS — Our green brand system
+       ======================================================================= */
+    --color-brand: #2D5016;
+    --color-brand-light: #3d6b1e;
+    --color-brand-dark: #234010;
+    --color-brand-subtle: #2d50160a;
+    --color-brand-muted: #2d50161f;
+    --color-brand-emphasis: #2D5016;
+
+    /* Brand scale (green) */
+    --color-brand-25:  #f6f9f4;
+    --color-brand-50:  #eef3ea;
+    --color-brand-100: #dce7d4;
+    --color-brand-200: #b9cfaa;
+    --color-brand-300: #8fb278;
+    --color-brand-400: #6a9a4e;
+    --color-brand-500: #4a8030;
+    --color-brand-600: #2D5016;
+    --color-brand-700: #264413;
+    --color-brand-800: #1f380f;
+    --color-brand-900: #172c0c;
+    --color-brand-950: #0f1c08;
+
+    /* Secondary / Accent */
+    --color-sec: #8BC34A;
+    --color-sec-light: #9ccc65;
+    --color-accent: #FF9800;
+    --color-accent-light: #ffb74d;
+
+    /* Surfaces */
+    --color-sf-0: #ffffff;
+    --color-sf-1: #f8faf6;
+    --color-sf-2: #f0f4ec;
+    --color-sf-3: #e8ede3;
+
+    /* Glass */
+    --color-glass: rgba(255, 255, 255, 0.7);
+    --color-glass-heavy: rgba(255, 255, 255, 0.85);
+
+    /* Text hierarchy */
+    --color-tx: #1a2e0a;
+    --color-tx-sec: #4a5e3a;
+    --color-tx-muted: #6b7d5c;
+    --color-tx-faint: #8b9c7d;
+    --color-tx-inv: #ffffff;
+
+    /* Semantic shortcuts */
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* =======================================================================
+       POS ACCENT TOKENS — Required for Tailwind utility class generation
+       (bg-pos-accent, text-pos-accent-dark, shadow-pos-glow, ring-pos-ring, etc.)
+       ======================================================================= */
+    --color-pos-accent: #10b981;
+    --color-pos-accent-dark: #059669;
+    --color-pos-accent-light: #34d399;
+    --color-pos-surface: rgba(16, 185, 129, 0.08);
+    --color-pos-glow: rgba(16, 185, 129, 0.35);
+    --color-pos-ring: rgba(16, 185, 129, 0.2);
+    --color-pos-stock-low: #f59e0b;
+    --color-pos-stock-out: #ef4444;
+
+    /* =======================================================================
+       GRAY SCALE (from UUI, flat values)
+       ======================================================================= */
+    --color-gray-25: rgb(253 253 253);
+    --color-gray-50: rgb(250 250 250);
+    --color-gray-100: rgb(245 245 245);
+    --color-gray-200: rgb(233 234 235);
+    --color-gray-300: rgb(213 215 218);
+    --color-gray-400: rgb(164 167 174);
+    --color-gray-500: rgb(113 118 128);
+    --color-gray-600: rgb(83 88 98);
+    --color-gray-700: rgb(65 70 81);
+    --color-gray-800: rgb(37 43 55);
+    --color-gray-900: rgb(24 29 39);
+    --color-gray-950: rgb(10 13 18);
+
+    /* =======================================================================
+       ERROR / WARNING / SUCCESS SCALES (from UUI, flat values)
+       ======================================================================= */
+    --color-error-25: rgb(255 251 250);
+    --color-error-50: rgb(254 243 242);
+    --color-error-100: rgb(254 228 226);
+    --color-error-200: rgb(254 205 202);
+    --color-error-300: rgb(253 162 155);
+    --color-error-400: rgb(249 112 102);
+    --color-error-500: rgb(240 68 56);
+    --color-error-600: rgb(217 45 32);
+    --color-error-700: rgb(180 35 24);
+    --color-error-800: rgb(145 32 24);
+    --color-error-900: rgb(122 39 26);
+    --color-error-950: rgb(85 22 12);
+
+    --color-warning-25: rgb(255 252 245);
+    --color-warning-50: rgb(255 250 235);
+    --color-warning-100: rgb(254 240 199);
+    --color-warning-200: rgb(254 223 137);
+    --color-warning-300: rgb(254 200 75);
+    --color-warning-400: rgb(253 176 34);
+    --color-warning-500: rgb(247 144 9);
+    --color-warning-600: rgb(220 104 3);
+    --color-warning-700: rgb(181 71 8);
+    --color-warning-800: rgb(147 55 13);
+    --color-warning-900: rgb(122 46 14);
+    --color-warning-950: rgb(78 29 9);
+
+    --color-success-25: rgb(246 254 249);
+    --color-success-50: rgb(236 253 243);
+    --color-success-100: rgb(220 250 230);
+    --color-success-200: rgb(171 239 198);
+    --color-success-300: rgb(117 224 167);
+    --color-success-400: rgb(71 205 137);
+    --color-success-500: rgb(23 178 106);
+    --color-success-600: rgb(7 148 85);
+    --color-success-700: rgb(6 118 71);
+    --color-success-800: rgb(8 93 58);
+    --color-success-900: rgb(7 77 49);
+    --color-success-950: rgb(5 51 33);
+
+    /* =======================================================================
+       RETAINED UUI SEMANTIC TOKENS — Resolved to flat values (no var() chains!)
+       53 tokens actually used in components
+       ======================================================================= */
+
+    /* --- Foreground (text-fg-*) --- */
+    --color-fg-brand-primary: #4a8030;           /* was var(--color-brand-500) → our green */
+    --color-fg-brand-secondary_alt: #8fb278;     /* was var(--color-brand-300) → our green */
+    --color-fg-brand-secondary_hover: #4a8030;   /* was var(--color-brand-500) → our green */
+    --color-fg-disabled: rgb(164 167 174);       /* was var(--color-gray-400) */
+    --color-fg-disabled_subtle: rgb(213 215 218); /* was var(--color-gray-300) */
+    --color-fg-error-primary: rgb(217 45 32);    /* was var(--color-error-600) */
+    --color-fg-error-secondary: rgb(240 68 56);  /* was var(--color-error-500) */
+    --color-fg-quaternary: rgb(164 167 174);     /* was var(--color-gray-400) */
+    --color-fg-quaternary_hover: rgb(113 118 128); /* was var(--color-gray-500) */
+    --color-fg-success-primary: rgb(7 148 85);   /* was var(--color-success-600) */
+    --color-fg-white: rgb(255 255 255);          /* was var(--color-white) */
+
+    /* --- Background (bg-bg-*) --- */
+    --color-bg-brand-primary: #eef3ea;           /* was var(--color-brand-50) → our green */
+    --color-bg-brand-solid: #2D5016;             /* was var(--color-brand-600) → our green */
+    --color-bg-error-solid: rgb(217 45 32);      /* was var(--color-error-600) */
+    --color-bg-success-solid: rgb(7 148 85);     /* was var(--color-success-600) */
+    --color-bg-active: rgb(250 250 250);         /* was var(--color-gray-50) */
+    --color-bg-disabled: rgb(245 245 245);       /* was var(--color-gray-100) */
+    --color-bg-disabled_subtle: rgb(250 250 250); /* was var(--color-gray-50) */
+    --color-bg-tertiary: rgb(245 245 245);       /* was var(--color-gray-100) */
+    --color-bg-error-primary: rgb(254 243 242);  /* was var(--color-error-50) */
+    --color-bg-error-solid_hover: rgb(180 35 24); /* was var(--color-error-700) */
+
+    /* --- Text (text-text-*) --- */
+    --color-text-primary: rgb(24 29 39);         /* was var(--color-gray-900) */
+    --color-text-secondary: rgb(65 70 81);       /* was var(--color-gray-700) */
+    --color-text-tertiary: rgb(83 88 98);        /* was var(--color-gray-600) */
+    --color-text-disabled: rgb(113 118 128);     /* was var(--color-gray-500) */
+    --color-text-error-primary: rgb(217 45 32);  /* was var(--color-error-600) */
+    --color-text-error-primary_hover: rgb(180 35 24); /* was var(--color-error-700) */
+
+    /* --- Border (border-border-*) --- */
+    --color-border-brand: #8fb278;               /* was var(--color-brand-300) → our green */
+    --color-border-primary: rgb(213 215 218);    /* was var(--color-gray-300) */
+    --color-border-disabled: rgb(213 215 218);   /* was var(--color-gray-300) */
+    --color-border-error: rgb(240 68 56);        /* was var(--color-error-500) */
+    --color-border-error_subtle: rgb(253 162 155); /* was var(--color-error-300) */
+
+    /* --- Button (text-button-*) --- */
+    --color-button-primary-icon: #b9cfaa;        /* was var(--color-brand-200) → our green */
+    --color-button-primary-icon_hover: #dce7d4;  /* was var(--color-brand-100) → our green */
+    --color-button-destructive-primary-icon: rgb(253 162 155);    /* was var(--color-error-300) */
+    --color-button-destructive-primary-icon_hover: rgb(254 205 202); /* was var(--color-error-200) */
+
+    /* --- Focus (ring-focus-*) --- */
+    --color-focus-ring: #8fb278;                 /* was var(--color-brand-300) → our green */
+
+    /* --- Tooltip --- */
+    --color-tooltip-supporting-text: rgb(213 215 218); /* was var(--color-gray-300) */
+
+    /* --- Utility colors (bg-utility-*) — flat values --- */
+    --color-utility-brand-50: #eef3ea;           /* was var(--color-brand-50) → our green */
+    --color-utility-brand-100: #dce7d4;          /* was var(--color-brand-100) → our green */
+    --color-utility-gray-50: rgb(250 250 250);
+    --color-utility-gray-100: rgb(245 245 245);
+    --color-utility-blue-50: rgb(239 248 255);
+    --color-utility-blue-100: rgb(209 233 255);
+    --color-utility-blue-light-50: rgb(240 249 255);
+    --color-utility-blue-light-100: rgb(224 242 254);
+    --color-utility-error-50: rgb(254 243 242);
+    --color-utility-error-100: rgb(254 228 226);
+    --color-utility-success-50: rgb(236 253 243);
+    --color-utility-success-100: rgb(220 250 230);
+    --color-utility-warning-50: rgb(255 250 235);
+    --color-utility-warning-100: rgb(254 240 199);
+    --color-utility-indigo-50: rgb(238 244 255);
+    --color-utility-indigo-100: rgb(224 234 255);
+    --color-utility-orange-50: rgb(254 246 238);
+    --color-utility-orange-100: rgb(253 234 215);
+    --color-utility-pink-50: rgb(253 242 250);
+    --color-utility-pink-100: rgb(252 231 246);
+    --color-utility-purple-50: rgb(244 243 255);
+    --color-utility-purple-100: rgb(235 233 254);
+    --color-utility-gray-blue-50: rgb(248 249 252);
+    --color-utility-gray-blue-100: rgb(234 236 245);
+
+    /* =======================================================================
+       EXTENDED PALETTES — Colors not provided by UUI
+       ======================================================================= */
+
+    /* Gray-Blue scale */
+    --color-gray-blue-25: rgb(252 252 253);
+    --color-gray-blue-200: rgb(213 217 235);
+    --color-gray-blue-300: rgb(179 184 219);
+    --color-gray-blue-400: rgb(113 123 188);
+    --color-gray-blue-500: rgb(78 91 166);
+    --color-gray-blue-600: rgb(62 71 132);
+    --color-gray-blue-700: rgb(54 63 114);
+    --color-gray-blue-800: rgb(41 48 86);
+    --color-gray-blue-900: rgb(16 19 35);
+    --color-gray-blue-950: rgb(13 15 28);
+
+    /* Slate */
+    --color-slate-50: #f8fafc;
+    --color-slate-100: #f1f5f9;
+    --color-slate-200: #e2e8f0;
+    --color-slate-300: #cbd5e1;
+    --color-slate-400: #94a3b8;
+    --color-slate-500: #64748b;
+    --color-slate-600: #475569;
+    --color-slate-700: #334155;
+    --color-slate-800: #1e293b;
+    --color-slate-900: #0f172a;
+
+    /* Zinc */
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f4f4f5;
+    --color-zinc-200: #e4e4e7;
+    --color-zinc-300: #d4d4d8;
+    --color-zinc-400: #a1a1aa;
+    --color-zinc-500: #71717a;
+    --color-zinc-600: #52525b;
+    --color-zinc-700: #3f3f46;
+    --color-zinc-800: #27272a;
+    --color-zinc-900: #18181b;
+
+    /* Neutral */
+    --color-neutral-50: #fafafa;
+    --color-neutral-100: #f5f5f5;
+    --color-neutral-200: #e5e5e5;
+    --color-neutral-300: #d4d4d4;
+    --color-neutral-400: #a3a3a3;
+    --color-neutral-500: #737373;
+    --color-neutral-600: #525252;
+    --color-neutral-700: #404040;
+    --color-neutral-800: #262626;
+    --color-neutral-900: #171717;
+
+    /* Emerald */
+    --color-emerald-50: #ecfdf5;
+    --color-emerald-100: #d1fae5;
+    --color-emerald-200: #a7f3d0;
+    --color-emerald-300: #6ee7b7;
+    --color-emerald-400: #34d399;
+    --color-emerald-500: #10b981;
+    --color-emerald-600: #059669;
+    --color-emerald-700: #047857;
+    --color-emerald-800: #065f46;
+    --color-emerald-900: #064e3b;
+
+    /* Sky */
+    --color-sky-50: #f0f9ff;
+    --color-sky-100: #e0f2fe;
+    --color-sky-200: #bae6fd;
+    --color-sky-300: #7dd3fc;
+    --color-sky-400: #38bdf8;
+    --color-sky-500: #0ea5e9;
+    --color-sky-600: #0284c7;
+
+    /* Amber */
+    --color-amber-50: #fffbeb;
+    --color-amber-100: #fef3c7;
+    --color-amber-200: #fde68a;
+    --color-amber-300: #fcd34d;
+    --color-amber-400: #fbbf24;
+    --color-amber-500: #f59e0b;
+    --color-amber-600: #d97706;
+    --color-amber-700: #b45309;
+    --color-amber-800: #92400e;
+    --color-amber-900: #78350f;
+
+    /* Lime */
+    --color-lime-50: #f7fee7;
+    --color-lime-100: #ecfccb;
+    --color-lime-300: #bef264;
+    --color-lime-400: #a3e635;
+    --color-lime-500: #84cc16;
+    --color-lime-600: #65a30d;
+
+    /* Red */
+    --color-red-50: #fef2f2;
+    --color-red-100: #fee2e2;
+    --color-red-200: #fecaca;
+    --color-red-300: #fca5a5;
+    --color-red-400: #f87171;
+    --color-red-500: #ef4444;
+    --color-red-600: #dc2626;
+    --color-red-700: #b91c1c;
+    --color-red-800: #991b1b;
+    --color-red-900: #7f1d1d;
+    --color-red-950: #450a0a;
+
+}
+
+/* =========================================================================
+   :root — Runtime CSS vars for component CSS (.btn-primary, .glass, etc.)
+   These exist at runtime so component CSS can use var(--color-brand).
+   ========================================================================= */
+:root {
+    /* Source-of-truth design tokens */
+    --theme-brand: #2D5016;
+    --theme-brand-light: #3d6b1e;
+    --theme-brand-dark: #234010;
+    --theme-brand-subtle: #2d50160a;
+    --theme-brand-muted: #2d50161f;
+    --theme-brand-emphasis: #2D5016;
+    --theme-sec: #8BC34A;
+    --theme-sec-light: #9ccc65;
+    --theme-accent: #FF9800;
+    --theme-accent-light: #ffb74d;
+    --theme-sf-0: #ffffff;
+    --theme-sf-1: #f8faf6;
+    --theme-sf-2: #f0f4ec;
+    --theme-sf-3: #e8ede3;
+    --theme-glass: rgba(255, 255, 255, 0.7);
+    --theme-glass-heavy: rgba(255, 255, 255, 0.85);
+    --theme-tx: #1a2e0a;
+    --theme-tx-sec: #4a5e3a;
+    --theme-tx-muted: #6b7d5c;
+    --theme-tx-faint: #8b9c7d;
+    --theme-tx-inv: #ffffff;
+    --theme-ring-soft: rgba(45, 80, 22, 0.1);
+    --theme-ring-med: rgba(45, 80, 22, 0.2);
+    --theme-border-soft: #e2e8df;
+    --theme-shadow-brand-soft: 0 4px 14px 0 rgba(45, 80, 22, 0.1);
+
+    /* Runtime aliases for component CSS */
+    --color-brand: #2D5016;
+    --color-brand-light: #3d6b1e;
+    --color-brand-dark: #234010;
+    --color-brand-subtle: #2d50160a;
+    --color-brand-muted: #2d50161f;
+    --color-brand-emphasis: #2D5016;
+    --color-sec: #8BC34A;
+    --color-sec-light: #9ccc65;
+    --color-accent: #FF9800;
+    --color-accent-light: #ffb74d;
+    --color-sf-0: #ffffff;
+    --color-sf-1: #f8faf6;
+    --color-sf-2: #f0f4ec;
+    --color-sf-3: #e8ede3;
+    --color-tx: #1a2e0a;
+    --color-tx-sec: #4a5e3a;
+    --color-tx-muted: #6b7d5c;
+    --color-tx-faint: #8b9c7d;
+    --color-tx-inv: #ffffff;
+
+    /* POS runtime vars — consumed by inline style={{ var(--color-pos-*) }} */
+    --color-pos-bg: #f8faf6;
+    --color-pos-surface: rgba(16, 185, 129, 0.08);
+    --color-pos-text: #1a2e0a;
+    --color-pos-border: #e2e8df;
+    --color-pos-header: #ffffff;
+    --color-pos-sidebar: #f0f4ec;
+    --color-pos-muted: #6b7d5c;
+    --color-pos-accent: #10b981;
+    --color-pos-accent-dark: #059669;
+    --color-pos-accent-light: #34d399;
+    --color-pos-glow: rgba(16, 185, 129, 0.35);
+    --color-pos-ring: rgba(16, 185, 129, 0.2);
+    --color-pos-stock-low: #f59e0b;
+    --color-pos-stock-out: #ef4444;
+
+    /* Brand scale (green) */
+    --color-brand-25:  #f6f9f4;
+    --color-brand-50:  #eef3ea;
+    --color-brand-100: #dce7d4;
+    --color-brand-200: #b9cfaa;
+    --color-brand-300: #8fb278;
+    --color-brand-400: #6a9a4e;
+    --color-brand-500: #4a8030;
+    --color-brand-600: #2D5016;
+    --color-brand-700: #264413;
+    --color-brand-800: #1f380f;
+    --color-brand-900: #172c0c;
+    --color-brand-950: #0f1c08;
+}
+
+/* ========================================================================
+   Dark Mode — controlled by next-themes (.dark class on <html>)
+   Overrides both --theme-* source tokens and --color-* runtime aliases
+   ======================================================================== */
+
+.dark {
+    /* Surfaces */
+    --theme-sf-0: #0f1a0a;
+    --theme-sf-1: #1a2e12;
+    --theme-sf-2: #24401a;
+    --theme-sf-3: #2e5222;
+    --color-sf-0: #0f1a0a;
+    --color-sf-1: #1a2e12;
+    --color-sf-2: #24401a;
+    --color-sf-3: #2e5222;
+
+    /* Text */
+    --theme-tx: #e8f0e0;
+    --theme-tx-sec: #c5d8b8;
+    --theme-tx-muted: #a3b89a;
+    --theme-tx-faint: #8b9c7d;
+    --color-tx: #e8f0e0;
+    --color-tx-sec: #c5d8b8;
+    --color-tx-muted: #a3b89a;
+    --color-tx-faint: #8b9c7d;
+    --color-tx-inv: #1a2e0a;
+
+    /* Glass */
+    --theme-glass: rgba(15, 26, 10, 0.7);
+    --theme-glass-heavy: rgba(15, 26, 10, 0.85);
+
+    /* Rings & Borders */
+    --theme-ring-soft: rgba(139, 195, 74, 0.15);
+    --theme-ring-med: rgba(139, 195, 74, 0.25);
+    --theme-border-soft: #2e5222;
+
+    /* Brand tweaks for readability on dark bg */
+    --color-brand-light: #6a9a4e;
+    --color-brand-subtle: rgba(139, 195, 74, 0.06);
+    --color-brand-muted: rgba(139, 195, 74, 0.15);
+
+    /* Shadows */
+    --theme-shadow-brand-soft: 0 4px 14px 0 rgba(139, 195, 74, 0.1);
+    --theme-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --theme-shadow-card-hover: 0 10px 25px rgba(139, 195, 74, 0.15);
+    --theme-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+    /* POS dark mode — slightly brighter for contrast on dark surfaces */
+    --color-pos-bg: #0f1a0a;
+    --color-pos-surface: rgba(52, 211, 153, 0.1);
+    --color-pos-text: #e8f0e0;
+    --color-pos-border: #2e5222;
+    --color-pos-header: #1a2e12;
+    --color-pos-sidebar: #1a2e12;
+    --color-pos-muted: #a3b89a;
+    --color-pos-accent: #34d399;
+    --color-pos-accent-dark: #10b981;
+    --color-pos-accent-light: #6ee7b7;
+    --color-pos-glow: rgba(52, 211, 153, 0.25);
+    --color-pos-ring: rgba(52, 211, 153, 0.2);
+    --color-pos-stock-low: #fbbf24;
+    --color-pos-stock-out: #f87171;
+}
+
+/* ========================================================================
+   Base Styles
+   ======================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-sf-0);
+  color: var(--color-tx);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================================================
+   Accessibility — Focus Visible
+   ======================================================================== */
+
+/* Keyboard-only focus ring (invisible for mouse users) */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip-to-content link (screen reader accessible) */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-brand);
+  color: var(--color-tx-inv);
+  border-radius: var(--radius-button);
+  font-weight: 600;
+  transition: top 0.2s;
+}
+
+.skip-to-content:focus {
+  top: 1rem;
+}
+
+/* ========================================================================
+   Glassmorphism Utilities
+   ======================================================================== */
+
+.glass {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.glass-strong {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass {
+  background: rgba(15, 26, 10, 0.85);
+  border-color: rgba(139, 195, 74, 0.08);
+}
+
+
+.dark .glass-strong {
+  background: rgba(15, 26, 10, 0.92);
+  border-color: rgba(139, 195, 74, 0.12);
+}
+
+[data-theme="auto"] {
+  @media (prefers-color-scheme: dark) {
+    & .glass {
+      background: rgba(15, 26, 10, 0.7);
+      border-color: rgba(139, 195, 74, 0.15);
+    }
+
+    & .glass-strong {
+      background: rgba(15, 26, 10, 0.85);
+      border-color: rgba(139, 195, 74, 0.2);
+    }
+  }
+}
+
+/* ========================================================================
+   Panel — Design Tokens & Utilities
+   ======================================================================== */
+
+/* Animated stat number counter */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Chart bar growth */
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* Pulse glow for critical usage */
+@keyframes criticalPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.15); }
+}
+
+.stat-value {
+  animation: countUp 0.5s var(--ease-smooth) both;
+}
+
+/* Mini sparkline chart */
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 32px;
+}
+
+.sparkline-bar {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--color-brand);
+  opacity: 0.3;
+  transform-origin: bottom;
+  animation: barGrow 0.5s var(--ease-spring) both;
+  transition: opacity 0.2s;
+}
+
+.sparkline-bar:last-child {
+  opacity: 0.8;
+}
+
+.sparkline-bar:hover {
+  opacity: 1;
+}
+
+/* Trend indicators */
+.trend-up {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.trend-down {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.trend-neutral {
+  color: var(--color-tx-muted);
+  background: var(--color-sf-2);
+}
+
+/* Notification badge dot */
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid var(--color-sf-0);
+  position: absolute;
+  top: -2px;
+  right: -2px;
+}
+
+.badge-count {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Plan badge in sidebar footer */
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--color-brand), var(--color-sec));
+  color: white;
+  letter-spacing: 0.02em;
+}
+
+/* Usage meter critical state */
+.usage-critical {
+  animation: criticalPulse 2s ease-in-out infinite;
+}
+
+/* Quick action card */
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 1.25rem 1rem;
+  border-radius: var(--radius-card);
+  background: var(--color-sf-0);
+  border: 1px solid var(--color-sf-2);
+  transition: all 0.2s var(--ease-smooth);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-tx);
+}
+
+.quick-action:hover {
+  border-color: var(--color-brand);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.quick-action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-brand), var(--color-sec));
+  color: white;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-sf-1), var(--color-sf-2));
+  margin-bottom: 1.5rem;
+}
+
+/* Sidebar active link indicator */
+.sidebar-link-active {
+  position: relative;
+  background: var(--color-brand) / 0.08;
+}
+
+.sidebar-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--color-brand), var(--color-sec));
+}
+
+/* Funnel chart bars */
+.funnel-bar {
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-sec));
+  transition: width 0.6s var(--ease-spring);
+  min-width: 24px;
+}
+
+/* ========================================================================
+   Product Card
+   ======================================================================== */
+
+.product-card {
+  border-radius: var(--radius-card);
+  background: var(--color-sf-0);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 0.3s var(--ease-spring),
+    box-shadow 0.3s var(--ease-smooth),
+    border-color 0.3s var(--ease-smooth);
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-sec);
+}
+
+.product-card .product-card-image {
+  overflow: hidden;
+}
+
+.product-card:hover .product-card-image img {
+  transform: scale(1.05);
+}
+
+.product-card .product-card-image img {
+  transition: transform 0.4s var(--ease-smooth);
+}
+
+/* ========================================================================
+   Buttons
+   ======================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: var(--radius-button);
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s var(--ease-smooth);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--color-brand);
+  color: var(--color-tx-inv);
+}
+
+.btn-primary:hover {
+  background: var(--color-brand-light);
+  box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
+}
+
+.btn-secondary {
+  background: var(--color-sf-2);
+  color: var(--color-tx);
+}
+
+.btn-secondary:hover {
+  background: var(--color-sf-3);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-tx);
+}
+
+.btn-ghost:hover {
+  background: var(--color-sf-1);
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: #ffffff;
+}
+
+.btn-whatsapp:hover {
+  background: #20bd5a;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);
+}
+
+.btn-accent {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn-accent:hover {
+  background: var(--color-accent-light);
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+/* ========================================================================
+   Payment Icons
+   ======================================================================== */
+
+.payment-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--color-sf-0);
+  border: 1px solid var(--color-sf-3);
+  transition: border-color 0.2s var(--ease-smooth);
+}
+
+.payment-icon:hover {
+  border-color: var(--color-brand);
+}
+
+.payment-icon-alt {
+  padding: 4px 8px;
+}
+
+/* ========================================================================
+   Form Inputs
+   ======================================================================== */
+
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--color-sf-3);
+  background: var(--color-sf-0);
+  color: var(--color-tx);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input::placeholder {
+  color: var(--color-tx-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 15%, transparent);
+}
+
+.dark .input {
+  background: var(--color-sf-1);
+  border-color: var(--color-sf-3);
+}
+
+[data-theme="auto"] {
+  @media (prefers-color-scheme: dark) {
+    & .input {
+      background: var(--color-sf-1);
+      border-color: var(--color-sf-3);
+    }
+  }
+}
+
+/* ========================================================================
+   Skeleton Shimmer Animation
+   ======================================================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--color-sf-2) 25%,
+      var(--color-sf-1) 50%,
+      var(--color-sf-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+  border-radius: var(--radius-button);
+}
+
+/* ========================================================================
+   Micro-animations
+   ======================================================================== */
+
+@keyframes pulse-badge {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fly-to-cart {
+  0% {
+    opacity: 1;
+    transform: scale(1) translate(0, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translate(var(--fly-x, 100px), var(--fly-y, -200px));
+  }
+}
+
+.animate-pulse-badge {
+  animation: pulse-badge 0.4s var(--ease-spring);
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s var(--ease-smooth) both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s var(--ease-smooth);
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s var(--ease-smooth);
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s var(--ease-smooth);
+}
+
+.animate-slide-right {
+  animation: slide-in-right 0.3s var(--ease-smooth);
+}
+
+/* ========================================================================
+   Onboarding — Welcome Modal & Panel Tour Animations
+   ======================================================================== */
+
+@keyframes confetti {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg) scale(0);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateY(-20px) rotate(30deg) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-300px) rotate(720deg) scale(0.5);
+  }
+}
+
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-confetti {
+  animation: confetti 2.5s ease-out forwards;
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s var(--ease-smooth) infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s var(--ease-smooth) both;
+}
+
+.animate-fade-in-up-delay {
+  animation: fade-in-up 0.6s var(--ease-smooth) 0.2s both;
+}
+
+/* Gamification animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(34, 197, 94, 0.6); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes shimmer-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer-slide 3s ease-in-out infinite;
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(circle at center, var(--tw-gradient-from, transparent), var(--tw-gradient-via, transparent), var(--tw-gradient-to, transparent));
+}
+
+/* ========================================================================
+   SOTA Animation System — Foundation (Phase 1.8)
+   Provides reusable keyframes, stagger utilities, and hover effects
+   used across all storefront components.
+   ======================================================================== */
+
+/* --- Shake: form validation errors, invalid coupon codes --- */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s var(--ease-smooth);
+}
+
+/* --- Check Bounce: add-to-cart success, form submit success --- */
+@keyframes check-bounce {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-check-bounce {
+  animation: check-bounce 0.5s var(--ease-spring) forwards;
+}
+
+/* --- Scale In: modals, dropdowns, popovers --- */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s var(--ease-smooth) both;
+}
+
+/* --- Slide Up Stagger: cards, grid items entrance (extends existing slide-up) --- */
+@keyframes slide-up-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-stagger {
+  animation: slide-up-stagger 0.5s var(--ease-smooth) both;
+}
+
+/* --- Stagger Delay Utilities --- */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 350ms; }
+.stagger-8 { animation-delay: 400ms; }
+
+/* --- Hover Lift: cards, buttons, interactive elements --- */
+.hover-lift {
+  transition:
+    transform 0.3s var(--ease-spring),
+    box-shadow 0.3s var(--ease-smooth);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 12px 24px -8px rgba(45, 80, 22, 0.12),
+    0 4px 8px -2px rgba(0, 0, 0, 0.06);
+}
+
+.hover-lift:active {
+  transform: translateY(-1px);
+}
+
+/* --- Hover Glow: brand-colored subtle glow for premium elements --- */
+.hover-glow {
+  transition:
+    box-shadow 0.3s var(--ease-smooth),
+    border-color 0.3s var(--ease-smooth);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(45, 80, 22, 0.15), 0 0 6px rgba(45, 80, 22, 0.1);
+  border-color: rgba(45, 80, 22, 0.3);
+}
+
+/* --- Hover Scale: subtle zoom for images, thumbnails --- */
+.hover-scale {
+  transition: transform 0.4s var(--ease-smooth);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* --- Button Shimmer: premium CTA hover effect --- */
+@keyframes btn-shimmer {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: none;
+}
+
+.btn-shimmer:hover::after {
+  animation: btn-shimmer 0.6s ease-out;
+}
+
+/* --- Spin: loading spinners --- */
+@keyframes spin-smooth {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-smooth {
+  animation: spin-smooth 0.8s linear infinite;
+}
+
+/* --- Progress Indeterminate: loading bars --- */
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.animate-progress {
+  animation: progress-indeterminate 1.5s var(--ease-smooth) infinite;
+}
+
+/* ========================================================================
+   Accessibility — Reduced Motion
+   Users who prefer reduced motion get instant transitions, no animations.
+   WCAG 2.1 AA compliant.
+   ======================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hover-lift:hover {
+    transform: none;
+  }
+
+  .hover-scale:hover {
+    transform: none;
+  }
+}
+
+/* ========================================================================
+   Toast Notifications
+   ======================================================================== */
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+}
+
+.toast-enter {
+  animation: toast-in 0.3s var(--ease-spring);
+}
+
+.toast-exit {
+  animation: toast-out 0.2s var(--ease-smooth) forwards;
+}
+
+/* Toast progress bar countdown */
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}
+
+.toast-progress-bar {
+  animation: toast-progress linear forwards;
+}
+
+/* ========================================================================
+   Layout Utilities
+   ======================================================================== */
+
+.container-page {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* WhatsApp floating CTA */
+.whatsapp-float {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 40;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  background: #25D366;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s, opacity 0.2s var(--ease-smooth);
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(37, 211, 102, 0.5);
+}
+
+/* Hide WhatsApp float when a drawer or modal is open */
+body.drawer-open .whatsapp-float {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ========================================================================
+   CMS Content Prose Styles
+   ======================================================================== */
+
+.cms-content h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-tx);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.cms-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-tx);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.cms-content p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.cms-content ul,
+.cms-content ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.cms-content li {
+  margin-bottom: 0.5rem;
+}
+
+.cms-content a {
+  color: var(--color-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cms-content a:hover {
+  color: var(--color-brand-light);
+}
+
+.cms-content blockquote {
+  border-left: 4px solid var(--color-brand);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--color-tx-muted);
+}
+
+.cms-content img {
+  border-radius: var(--radius-card);
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+}
+
+/* ========================================================================
+   Scrollbar
+   ======================================================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-sf-1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-sf-3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tx-muted);
+}
+
+/* ========================================================================
+   Product Badge
+   ======================================================================== */
+
+.product-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.product-badge-new {
+  background: var(--color-brand);
+  color: var(--color-tx-inv);
+}
+
+.product-badge-offer {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.product-badge-soldout {
+  background: var(--color-sf-3);
+  color: var(--color-tx-sec);
+}
+
+/* ========================================================================
+   Template-Agnostic Image Fallback
+   ======================================================================== */
+
+.image-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+      var(--color-sf-1) 0%,
+      var(--color-sf-2) 50%,
+      var(--color-sf-1) 100%);
+}
+
+.image-fallback svg {
+  width: 3rem;
+  height: 3rem;
+  color: var(--color-tx-muted);
+  opacity: 0.5;
+}
+
+/* ========================================================================
+   Scroll-Reveal Animations
+   ======================================================================== */
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s var(--ease-smooth), transform 0.6s var(--ease-smooth);
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for grid children */
+.stagger-1 {
+  transition-delay: 0.05s;
+}
+
+.stagger-2 {
+  transition-delay: 0.1s;
+}
+
+.stagger-3 {
+  transition-delay: 0.15s;
+}
+
+.stagger-4 {
+  transition-delay: 0.2s;
+}
+
+.stagger-5 {
+  transition-delay: 0.25s;
+}
+
+.stagger-6 {
+  transition-delay: 0.3s;
+}
+
+.stagger-7 {
+  transition-delay: 0.35s;
+}
+
+.stagger-8 {
+  transition-delay: 0.4s;
+}
+
+/* ========================================================================
+   Card Lift — Hover elevation for interactive cards
+   ======================================================================== */
+
+.card-lift {
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-smooth);
+}
+
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ========================================================================
+   Count Bump — Quantity change animation
+   ======================================================================== */
+
+@keyframes count-bump {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-count-bump {
+  animation: count-bump 0.2s var(--ease-spring);
+}
+
+/* ========================================================================
+   Section Divider — Soft visual rhythm between homepage sections
+   ======================================================================== */
+
+.section-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-sf-3), transparent);
+  margin: 0 auto;
+  max-width: 60%;
+}
+
+/* ========================================================================
+   Touch Target — WCAG 2.5.5 minimum 44px
+   ======================================================================== */
+
+.touch-target {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+/* ========================================================================
+   iOS Safe Area Support
+   ======================================================================== */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .whatsapp-float {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ========================================================================
+   Accessibility — Reduced Motion
+   ======================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========================================================================
+   Image Zoom — Hover lens + fullscreen gallery
+   ======================================================================== */
+
+.image-zoom-container {
+  position: relative;
+  overflow: hidden;
+  cursor: zoom-in;
+  border-radius: var(--radius-card);
+}
+
+.image-zoom-base {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: opacity 0.2s;
+}
+
+.image-zoom-lens {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  opacity: 1;
+}
+
+.image-zoom-hint {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+  padding: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.image-zoom-container:hover .image-zoom-hint {
+  opacity: 1;
+}
+
+/* Touch devices — no hover lens */
+@media (hover: none) {
+  .image-zoom-lens {
+    display: none;
+  }
+
+  .image-zoom-hint {
+    opacity: 1;
+  }
+}
+
+/* Fullscreen overlay */
+.image-zoom-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.2s var(--ease-smooth);
+}
+
+.image-zoom-fullscreen-image {
+  position: relative;
+  width: 90vw;
+  height: 80vh;
+  max-width: 1200px;
+}
+
+.image-zoom-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 110;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.image-zoom-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.image-zoom-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 110;
+  padding: 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.image-zoom-nav:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.image-zoom-nav-prev {
+  left: 1rem;
+}
+
+.image-zoom-nav-next {
+  right: 1rem;
+}
+
+.image-zoom-dots {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 110;
+}
+
+.image-zoom-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.image-zoom-dot.active {
+  background: white;
+  transform: scale(1.3);
+}
+
+/* ========================================================================
+   Scrollbar Hide — for horizontal scroll sections (recently viewed)
+   ======================================================================== */
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========================================================================
+   Quick View Modal
+   ======================================================================== */
+
+.quick-view-trigger {
+  padding: 0.5rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.quick-view-trigger:hover {
+  background: var(--color-brand);
+  transform: scale(1.1);
+}
+
+.quick-view-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fade-in 0.15s;
+}
+
+.quick-view-modal {
+  position: relative;
+  background: var(--color-sf-0);
+  border-radius: 1.5rem;
+  max-width: 48rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-float);
+}
+
+.quick-view-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-sf-2);
+  color: var(--color-tx);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.quick-view-close:hover {
+  background: var(--color-sf-3);
+}
+
+.quick-view-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .quick-view-content {
+    grid-template-columns: 1fr 1fr;
+    padding: 2rem;
+  }
+}
+
+.quick-view-image {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--color-sf-1);
+}
+
+.quick-view-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ========================================================================
+   Mega Menu — Category dropdown
+   ======================================================================== */
+
+.mega-menu-container {
+  position: relative;
+}
+
+.mega-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+  color: var(--color-tx);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-button);
+  transition: color 0.2s, background 0.2s;
+}
+
+.mega-menu-trigger:hover {
+  color: var(--color-brand);
+  background: var(--color-sf-1);
+}
+
+.mega-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  min-width: 20rem;
+  max-width: 40rem;
+  background: var(--color-sf-0);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
+  border: 1px solid var(--color-sf-2);
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.mega-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 1.5rem;
+}
+
+.mega-menu-category {
+  display: block;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--color-tx);
+  margin-bottom: 0.5rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.mega-menu-category:hover {
+  color: var(--color-brand);
+}
+
+.mega-menu-subcategories {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mega-menu-subcategory {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-tx-sec);
+  padding: 0.25rem 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.mega-menu-subcategory:hover {
+  color: var(--color-brand);
+}
+
+/* ========================================================================
+   Price Range Filter
+   ======================================================================== */
+
+.price-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price-range-inputs .input {
+  max-width: 6rem;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+/* ===== Bottom Navigation (mobile-only) ===== */
+.bottom-nav {
+  display: none;
+  /* hidden on desktop */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-border);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@media (max-width: 767px) {
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-top: 0.5rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+  }
+
+  /* Add space at bottom of page so content isn't hidden behind nav */
+  main {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0));
+  }
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 0.25rem 0.75rem;
+  color: var(--color-tx-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.bottom-nav-item--active {
+  color: var(--color-brand);
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  background: var(--color-brand);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ===== RTL support (future locales: ar, he, fa, ur) ===== */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/* ========================================================================
+   Gamification — Achievements, Health Ring, Celebrations
+   ======================================================================== */
+
+/* Achievement badge card */
+.achievement-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0.75rem;
+  border-radius: var(--radius-card);
+  background: var(--color-sf-1);
+  border: 1px solid var(--color-sf-3);
+  transition: all 0.3s var(--ease-smooth);
+  text-align: center;
+}
+
+.achievement-badge.unlocked {
+  border-color: var(--color-brand);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-brand) 5%, var(--color-sf-1)), var(--color-sf-1));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-brand) 15%, transparent);
+}
+
+.achievement-badge.locked {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+.achievement-badge.locked:hover {
+  opacity: 0.7;
+  filter: grayscale(0.4);
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-brand) 20%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-brand) 35%, transparent);
+  }
+}
+
+.achievement-badge.newly-unlocked {
+  animation: glow-pulse 2s ease-in-out 3;
+}
+
+/* Health ring */
+@keyframes progress-fill {
+  from {
+    stroke-dasharray: 0 251.33;
+  }
+}
+
+.health-ring {
+  transition: stroke-dasharray 1s var(--ease-spring);
+}
+
+@keyframes score-count {
+  from { opacity: 0; transform: scale(0.5); }
+  50% { transform: scale(1.15); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-score-count {
+  animation: score-count 0.6s var(--ease-spring) 0.3s both;
+}
+
+/* Celebration toast */
+@keyframes celebrate-in {
+  0% {
+    opacity: 0;
+    transform: translateX(100%) scale(0.8);
+  }
+  60% {
+    transform: translateX(-8px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes celebrate-shake {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-8deg); }
+  30% { transform: rotate(8deg); }
+  45% { transform: rotate(-5deg); }
+  60% { transform: rotate(5deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+.celebrate-toast-enter {
+  animation: celebrate-in 0.5s var(--ease-spring);
+}
+
+.celebrate-emoji {
+  animation: celebrate-shake 0.6s var(--ease-spring) 0.3s both;
+}
+
+/* Confetti burst (for celebrations) */
+@keyframes confetti-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--confetti-x, 40px), var(--confetti-y, -80px)) rotate(var(--confetti-r, 360deg)) scale(0.3);
+  }
+}
+
+.confetti-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  animation: confetti-burst 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Smart tip */
+.smart-tip {
+  position: relative;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-card);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-brand) 6%, var(--color-sf-1)), var(--color-sf-1));
+  border: 1px solid color-mix(in srgb, var(--color-brand) 20%, var(--color-sf-3));
+  animation: slide-up 0.3s var(--ease-smooth) both;
+}
+
+.smart-tip-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-tx-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  padding: 0;
+}
+
+.smart-tip-dismiss:hover {
+  background: var(--color-sf-2);
+  color: var(--color-tx);
+}
+
+/* Level badges */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.level-badge-setup {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.level-badge-growing {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.level-badge-thriving {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════════
+ * POS Fullscreen Mode
+ * Body class toggled by POSClient via useEffect.
+ * Hides panel sidebar + topbar for distraction-free POS.
+ * ═══════════════════════════════════════════════════ */
+
+/* Hide desktop sidebar */
+body.pos-fullscreen aside.hidden.md\:flex {
+  display: none !important;
+}
+
+/* Hide mobile sidebar overlay */
+body.pos-fullscreen .md\:hidden.fixed.inset-0.z-50 {
+  display: none !important;
+}
+
+/* Remove topbar */
+body.pos-fullscreen [data-panel-topbar] {
+  display: none !important;
+}
+
+/* Remove content area constraints */
+body.pos-fullscreen .max-w-6xl {
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Ensure full height */
+body.pos-fullscreen {
+  overflow: hidden;
+}
+
+/* ── POS Grid Layout (viewport-locked split — wider sidebar for tablets) ── */
+.pos-grid {
+  display: grid;
+  grid-template-columns: 1fr minmax(380px, 38%);
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Mobile: full-height products + bottom cart mini-bar */
+@media (max-width: 767px) {
+  .pos-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+}
+
+/* ── POS Viewport Lock ── */
+/* NOTE: PanelShell already sets h-dvh + overflow-hidden when isPOS.
+   pos-viewport fills that container — do NOT use 100dvh here. */
+.pos-viewport {
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-sf-0, #fff);
+}
+
+/* ── POS Cart Sidebar ── */
+.pos-cart-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pos-cart-sidebar__items {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pos-cart-sidebar__footer {
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── POS Product Panel (only scrollable area) ── */
+.pos-products-panel {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ── POS Glow Pulse — PAY button ── */
+@keyframes pos-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50% { box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.25); }
+}
+
+.pos-pay-glow {
+  animation: pos-glow-pulse 2.5s ease-in-out infinite;
+}
+
+/* ── POS Card Added — green border pulse on product cards ── */
+@keyframes pos-card-flash {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pos-card-added {
+  animation: pos-card-flash 0.5s ease-out;
+}
+
+/* ── POS Swipe Delete Hint ── */
+.pos-swipe-hint {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(180deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.35) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pos-cart-item:hover .pos-swipe-hint {
+  opacity: 1;
+}
+
+/* ── Mobile Cart Bottom Sheet (enhanced) ── */
+@media (max-width: 767px) {
+  .pos-cart-minibar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: var(--color-sf-0, #fff);
+    border-top: 1px solid var(--color-sf-2, #e5e7eb);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pos-cart-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .pos-cart-sheet__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(8px);
+  }
+
+  .pos-cart-sheet__panel {
+    position: relative;
+    max-height: 90dvh;
+    border-radius: 1.5rem 1.5rem 0 0;
+    background: var(--color-sf-0, #fff);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .pos-cart-sheet__handle {
+    width: 3rem;
+    height: 0.3rem;
+    border-radius: 9999px;
+    background: var(--color-sf-3, #d1d5db);
+    margin: 0.625rem auto 0.375rem;
+    flex-shrink: 0;
+    cursor: grab;
+  }
+  .pos-cart-sheet__handle:active {
+    cursor: grabbing;
+    background: var(--color-tx-faint, #9ca3af);
+  }
+}
+
+/* ── POS Toolbar Overflow Menu ── */
+.pos-toolbar-more {
+  position: relative;
+}
+
+.pos-toolbar-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 200px;
+  background: var(--color-sf-0, #fff);
+  border: 1px solid var(--color-sf-2, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  padding: 4px;
+  backdrop-filter: blur(20px);
+}
+
+/* ── POS Display Config Popover ── */
+.pos-display-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 280px;
+  background: var(--color-sf-0, #fff);
+  border: 1px solid var(--color-sf-2, #e5e7eb);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  padding: 12px;
+  backdrop-filter: blur(20px);
+}
+
+/* ═══════════════════════════════════════════════════
+ * POS PREMIUM VISUAL LAYER — Liquid Glass + Gradients
+ * Informed by: Apple Liquid Glass (iOS 26), shadcn-glass-ui,
+ * CSS @property animated borders, SVG feTurbulence noise
+ * ═══════════════════════════════════════════════════ */
+
+/* ── Liquid Glass — functional layer surfaces ── */
+.pos-liquid-glass {
+  position: relative;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.pos-liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark .pos-liquid-glass {
+  background: rgba(15, 26, 10, 0.65);
+  border-color: rgba(52, 211, 153, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(52, 211, 153, 0.06);
+}
+
+/* Denser variant for modals/overlays */
+.pos-liquid-glass-heavy {
+  position: relative;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .pos-liquid-glass-heavy {
+  background: rgba(15, 26, 10, 0.8);
+  border-color: rgba(52, 211, 153, 0.1);
+}
+
+/* ── Premium PAY Button ── */
+.pos-pay-btn {
+  background: linear-gradient(135deg, var(--color-pos-accent) 0%, var(--color-pos-accent-dark) 100%);
+  box-shadow: 0 8px 32px var(--color-pos-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  color: white;
+  border: none;
+}
+
+.pos-pay-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 40px var(--color-pos-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.pos-pay-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.pos-pay-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Breathing Glow — idle PAY button ── */
+@keyframes pos-breathe {
+  0%, 100% { box-shadow: 0 4px 20px var(--color-pos-glow); }
+  50% { box-shadow: 0 8px 36px var(--color-pos-glow), 0 0 0 4px rgba(16, 185, 129, 0.08); }
+}
+
+.pos-pay-btn-idle {
+  animation: pos-breathe 3s ease-in-out infinite;
+}
+
+/* ── Numpad Key — depth + press ── */
+.pos-numpad-key {
+  border-radius: 16px;
+  background: var(--color-sf-1, #f3f4f6);
+  border: 1px solid var(--color-sf-2, #e5e7eb);
+  font-weight: 700;
+  transition: all 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  min-height: 52px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.pos-numpad-key:hover {
+  background: var(--color-sf-2, #e5e7eb);
+}
+
+.pos-numpad-key:active {
+  transform: scale(0.95);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.dark .pos-numpad-key {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Payment Method Pill — gradient active ── */
+.pos-method-pill {
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  min-height: 72px;
+}
+
+.pos-method-pill-active {
+  background: linear-gradient(135deg, var(--color-pos-accent) 0%, var(--color-pos-accent-dark) 100%);
+  color: white;
+  box-shadow: 0 6px 20px var(--color-pos-glow);
+  border-color: transparent;
+}
+
+/* ── Cart Item Premium — hover glass ── */
+.pos-cart-item-premium {
+  border-radius: 16px;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pos-cart-item-premium:hover {
+  background: var(--color-pos-surface);
+}
+
+/* ── Active Confirm Button — gradient with glow (payment/numpad/change steps) ── */
+.pos-pay-btn-active {
+  background: linear-gradient(135deg, var(--color-pos-accent) 0%, var(--color-pos-accent-dark) 100%);
+  box-shadow: 0 6px 20px var(--color-pos-glow);
+}
+
+/* ── Footer Glass — frosted glass footer for cart/payment panels ── */
+.pos-footer-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .pos-footer-glass {
+  background: rgba(15, 26, 10, 0.85);
+}
+
+/* ── Glass Surface — translucent display area (numpad calculator) ── */
+.pos-glass-surface {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dark .pos-glass-surface {
+  background: rgba(15, 26, 10, 0.6);
+}
+
+/* ── Change Confirm Card — animated border ── */
+@property --pos-border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes pos-border-spin {
+  to { --pos-border-angle: 360deg; }
+}
+
+.pos-change-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.pos-change-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--pos-border-angle),
+    var(--color-pos-accent),
+    var(--color-pos-accent-light),
+    var(--color-pos-accent-dark),
+    var(--color-pos-accent)
+  );
+  animation: pos-border-spin 4s linear infinite;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+.pos-change-card::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(20px - 2px);
+  background: var(--color-sf-0, #fff);
+  z-index: -1;
+}
+
+.dark .pos-change-card::after {
+  background: var(--color-pos-header, #1a2e12);
+}
+
+/* ── Success Ring Burst ── */
+@keyframes pos-success-ring {
+  0% { transform: scale(0.8); opacity: 0; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pos-success-burst {
+  animation: pos-success-ring 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Entry Slide Up ── */
+@keyframes pos-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pos-enter-up {
+  animation: pos-slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Step Indicator Premium ── */
+.pos-step-bar {
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--color-pos-accent), var(--color-pos-accent-light));
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ═══ Accessibility: Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  .pos-pay-btn-idle,
+  .pos-pay-glow,
+  .pos-change-card::before,
+  .pos-success-burst,
+  .pos-enter-up {
+    animation: none !important;
+  }
+
+  .pos-pay-btn:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .pos-numpad-key:active {
+    transform: none;
+  }
+}
+
+/* ========================================================================
+   PREMIUM DASHBOARD — Awwwards-Level Design System Extensions
+   Phase 1: Animated borders, bento grid, elevated cards, scroll-reveal,
+            premium glass overlays, sidebar glow, dark mode native
+   ======================================================================== */
+
+/* ── Animated Gradient Border (conic spin) ── */
+@keyframes border-spin {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.glow-border {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--border-angle),
+    #2D5016,
+    #8BC34A,
+    #FF9800,
+    #2D5016
+  );
+  animation: border-spin 4s linear infinite;
+  z-index: -1;
+  opacity: 0.5;
+  filter: blur(2px);
+}
+
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: var(--color-sf-0);
+  z-index: -1;
+}
+
+.dark .glow-border::after {
+  background: var(--color-sf-0);
+}
+
+/* ── Premium Card Elevation ── */
+.card-elevated {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.card-elevated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(45, 80, 22, 0.12),
+              0 8px 16px -8px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-elevated:hover {
+  box-shadow: 0 20px 40px -12px rgba(139, 195, 74, 0.1),
+              0 8px 16px -8px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Bento Grid Layout System ── */
+.bento-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+  }
+
+  .bento-hero { grid-column: span 8; }
+  .bento-aside { grid-column: span 4; }
+  .bento-half { grid-column: span 6; }
+  .bento-third { grid-column: span 4; }
+  .bento-quarter { grid-column: span 3; }
+  .bento-full { grid-column: span 12; }
+  .bento-two-thirds { grid-column: span 8; }
+  .bento-wide { grid-column: span 9; }
+  .bento-narrow { grid-column: span 3; }
+}
+
+/* ── Premium Glass with Noise Texture ── */
+.glass-premium {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(190%);
+  -webkit-backdrop-filter: blur(16px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04),
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark .glass-premium {
+  background: rgba(15, 26, 10, 0.75);
+  border-color: rgba(139, 195, 74, 0.12);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(139, 195, 74, 0.06);
+}
+
+/* ── Scroll Reveal Animation ── */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.reveal-on-scroll {
+  animation: reveal-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reveal-on-scroll-scale {
+  animation: reveal-scale 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Dashboard Welcome Hero Card ── */
+@keyframes mesh-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero-welcome {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: linear-gradient(-45deg,
+    #2D5016,
+    #234010,
+    #3d6b1e,
+    #4a8030
+  );
+  background-size: 300% 300%;
+  animation: mesh-gradient 8s ease infinite;
+  color: white;
+}
+
+.hero-welcome::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(at 70% 30%, rgba(139, 195, 74, 0.25) 0%, transparent 60%),
+              radial-gradient(at 20% 80%, rgba(255, 152, 0, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.hero-welcome::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ── StatCard Premium Variants ── */
+.stat-card-premium {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s;
+}
+
+.stat-card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -8px rgba(45, 80, 22, 0.1),
+              0 4px 10px -4px rgba(0, 0, 0, 0.04);
+}
+
+.dark .stat-card-premium:hover {
+  box-shadow: 0 12px 28px -8px rgba(139, 195, 74, 0.08),
+              0 4px 10px -4px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card-premium .stat-icon-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s;
+}
+
+.stat-card-premium:hover .stat-icon-ring {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px -4px rgba(45, 80, 22, 0.15);
+}
+
+.dark .stat-card-premium:hover .stat-icon-ring {
+  box-shadow: 0 6px 16px -4px rgba(139, 195, 74, 0.12);
+}
+
+/* Subtle gradient overlay for stat cards */
+.stat-card-premium::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: linear-gradient(135deg,
+    rgba(45, 80, 22, 0.02) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+.stat-card-premium:hover::after {
+  opacity: 1;
+}
+
+/* ── Sidebar Premium Active Glow ── */
+.sidebar-link-glow {
+  position: relative;
+  background: rgba(45, 80, 22, 0.06);
+  border-radius: 12px;
+}
+
+.sidebar-link-glow::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #8BC34A, #2D5016);
+  box-shadow: 0 0 12px rgba(139, 195, 74, 0.3);
+}
+
+.dark .sidebar-link-glow {
+  background: rgba(139, 195, 74, 0.08);
+}
+
+.dark .sidebar-link-glow::before {
+  box-shadow: 0 0 12px rgba(139, 195, 74, 0.2);
+}
+
+/* ── Timeline Connector for Activity Feed ── */
+.timeline-connector {
+  position: relative;
+}
+
+.timeline-connector::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg,
+    var(--color-sf-3) 0%,
+    transparent 100%
+  );
+}
+
+.dark .timeline-connector::before {
+  background: linear-gradient(180deg,
+    rgba(139, 195, 74, 0.1) 0%,
+    transparent 100%
+  );
+}
+
+/* ── Quick Action Cards v2 ── */
+.quick-action-v2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 1.25rem 1rem;
+  border-radius: var(--radius-card);
+  background: var(--color-sf-0);
+  border: 1px solid var(--color-sf-2);
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-tx);
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-action-v2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: linear-gradient(135deg,
+    rgba(45, 80, 22, 0.04) 0%,
+    rgba(139, 195, 74, 0.04) 100%
+  );
+  pointer-events: none;
+}
+
+.quick-action-v2:hover {
+  border-color: var(--color-brand);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -8px rgba(45, 80, 22, 0.12);
+}
+
+.quick-action-v2:hover::before {
+  opacity: 1;
+}
+
+.dark .quick-action-v2 {
+  background: var(--color-sf-1);
+  border-color: rgba(139, 195, 74, 0.1);
+}
+
+.dark .quick-action-v2:hover {
+  border-color: rgba(139, 195, 74, 0.3);
+  box-shadow: 0 12px 24px -8px rgba(139, 195, 74, 0.08);
+}
+
+.quick-action-v2 .quick-action-icon-v2 {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2D5016, #4a8030);
+  color: white;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s;
+}
+
+.quick-action-v2:hover .quick-action-icon-v2 {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(45, 80, 22, 0.25);
+}
+
+/* ── Floating Animation for Empty States ── */
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: gentle-float 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ── Pulsing Accent Underline ── */
+@keyframes accent-pulse {
+  0%, 100% { opacity: 0.4; transform: scaleX(0.8); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+.accent-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.accent-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-sec));
+  animation: accent-pulse 3s ease-in-out infinite;
+}
+
+/* ── Avatar Online Ring ── */
+@keyframes avatar-ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--color-sf-0), 0 0 0 4px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 0 2px var(--color-sf-0), 0 0 0 6px rgba(34, 197, 94, 0.15); }
+}
+
+.avatar-online-ring {
+  border-radius: 9999px;
+  animation: avatar-ring-pulse 3s ease-in-out infinite;
+}
+
+/* ── Section Divider with Gradient ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-sf-3) 20%,
+    var(--color-sf-3) 80%,
+    transparent 100%
+  );
+  margin: 0.5rem 0;
+}
+
+.dark .section-divider {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(139, 195, 74, 0.1) 20%,
+    rgba(139, 195, 74, 0.1) 80%,
+    transparent 100%
+  );
+}
+
+/* ── Shimmer Slide (for skeleton loaders) ── */
+@keyframes shimmer-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ── Reduced motion safety ── */
+@media (prefers-reduced-motion: reduce) {
+  .glow-border::before,
+  .hero-welcome,
+  .animate-float,
+  .avatar-online-ring,
+  .accent-underline::after {
+    animation: none !important;
+  }
+  .card-elevated:hover,
+  .stat-card-premium:hover,
+  .quick-action-v2:hover {
+    transform: none !important;
+  }
+}
+
+/* ── Panel Tab Navigation (SOTA Redesign) ──────────────────────────────── */
+
+.panel-tab-nav {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.375rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: var(--sf-1);
+    border-radius: 1rem;
+    border: 1px solid var(--sf-3);
+}
+.panel-tab-nav::-webkit-scrollbar { display: none; }
+
+.panel-tab-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--tx-sec);
+    position: relative;
+}
+
+.panel-tab-active {
+    background: var(--surface, #fff);
+    color: var(--brand);
+    font-weight: 600;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.panel-tab-inactive:hover {
+    background: var(--sf-2);
+    color: var(--tx);
+}
+
+.panel-tab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+}
+.panel-tab-icon > svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.panel-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 0.25rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    background: var(--brand);
+    color: white;
+    line-height: 1;
+}
+
+/* Dark mode adjustments */
+:root[data-panel-theme="dark"] .panel-tab-nav {
+    background: var(--sf-2);
+}
+:root[data-panel-theme="dark"] .panel-tab-active {
+    background: var(--sf-3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile: slightly smaller tabs */
+@media (max-width: 768px) {
+    .panel-tab-item {
+        padding: 0.4375rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    .panel-tab-nav {
+        padding: 0.25rem;
+    }
+}
+
+/* ── New Sidebar Styles (6-section model) — Dark branded sidebar ───────── */
+
+.panel-sidebar-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    text-decoration: none;
+    position: relative;
+}
+
+.panel-sidebar-section:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.95);
+    transform: translateX(4px);
+}
+
+.panel-sidebar-section-active {
+    background: rgba(139, 195, 74, 0.15);
+    color: #8BC34A;
+    font-weight: 600;
+}
+
+.panel-sidebar-section-active .panel-sidebar-icon {
+    color: #8BC34A;
+}
+
+.panel-sidebar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s;
+}
+
+.panel-sidebar-section:hover .panel-sidebar-icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.panel-sidebar-badge {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    background: #8BC34A;
+    color: #0f1c08;
+}
+
+/* ── Mobile Sidebar Slide-in ── */
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+.animate-slide-in-left {
+    animation: slide-in-left 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Fade-in utility (topbar dropdown) ── */
+@keyframes animate-fade-in {
+    from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-in {
+    animation: animate-fade-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Plan badge pill ── */
+.plan-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(139, 195, 74, 0.15);
+    color: #8BC34A;
+    border: 1px solid rgba(139, 195, 74, 0.25);
+}

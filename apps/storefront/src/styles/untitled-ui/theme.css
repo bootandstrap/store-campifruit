@@ -1,0 +1,6 @@
+/* ========================================================================
+   UUI Theme Tokens — MOVED to globals.css for Turbopack compatibility
+   All @theme tokens and @layer base dark mode vars are now inlined
+   in src/app/globals.css. This file is intentionally empty.
+   Original backup: theme.css.bak
+   ======================================================================== */
