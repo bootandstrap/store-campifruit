@@ -30,6 +30,7 @@ import {
 } from 'react'
 import CelebrationToast, { type CelebrationItem } from './CelebrationToast'
 import { saveAchievementsAction } from '@/app/[lang]/(panel)/panel/actions'
+import { getAchievementDef } from '@/lib/achievements'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -136,12 +137,18 @@ export default function AchievementProvider({
     // ── Step 5: Now it's safe to trigger the celebration UI ──
     setHasNewUnlocks(true)
     setCelebrations(
-      fresh.map(id => ({
-        id,
-        emoji: EMOJI[id] || '🏆',
-        title: achievementLabels[`achievement.${id}.title`] || id,
-        description: achievementLabels[`achievement.${id}.desc`] || '',
-      }))
+      fresh.map(id => {
+        const definition = getAchievementDef(id)
+        const titleKey = definition?.titleKey
+        const descKey = definition?.descKey
+
+        return {
+          id,
+          emoji: EMOJI[id] || '🏆',
+          title: (titleKey && achievementLabels[titleKey]) || id,
+          description: (descKey && achievementLabels[descKey]) || '',
+        }
+      })
     )
 
     // ── Step 6: Best-effort DB persist (fire-and-forget) ──

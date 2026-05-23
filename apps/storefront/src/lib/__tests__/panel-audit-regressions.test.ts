@@ -80,4 +80,12 @@ describe('panel/storefront audit regressions', () => {
         expect(sidebar).toContain("translationMap[sub.label] ?? sub.label")
         expect(layout).toContain("key.startsWith('panel.tabs.')")
     })
+
+    it('resolves achievement toast labels through the achievement registry', () => {
+        const provider = read('components/panel/AchievementProvider.tsx')
+
+        expect(provider).toContain("import { getAchievementDef } from '@/lib/achievements'")
+        expect(provider).toContain('const definition = getAchievementDef(id)')
+        expect(provider).toContain('title: (titleKey && achievementLabels[titleKey]) || id')
+    })
 })
