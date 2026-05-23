@@ -39,10 +39,12 @@ jobs:
 
       # ── Architectural Gate (Sentrux) ────────────────
       - name: Install Sentrux
-        run: curl -fsSL https://raw.githubusercontent.com/sentrux/sentrux/main/install.sh | sh
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/sentrux/sentrux/main/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Architecture check (Sentrux)
-        run: ~/.local/bin/sentrux gate .
+        run: sentrux gate .
 
       # ── Governance SSOT Checks ──
       - name: Shared package contract tests
