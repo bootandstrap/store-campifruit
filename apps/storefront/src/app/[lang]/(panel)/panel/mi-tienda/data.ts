@@ -184,7 +184,7 @@ export async function fetchCarouselData(tenantId: string) {
         .from('carousel_slides')
         .select('*')
         .eq('tenant_id', tenantId)
-        .order('position', { ascending: true })
+        .order('sort_order', { ascending: true })
 
     const slideList = slides ?? []
     const limitCheck = checkLimit(planLimits, 'max_carousel_slides', slideList.length)

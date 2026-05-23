@@ -88,4 +88,23 @@ describe('panel/storefront audit regressions', () => {
         expect(provider).toContain('const definition = getAchievementDef(id)')
         expect(provider).toContain('title: (titleKey && achievementLabels[titleKey]) || id')
     })
+
+    it('orders owner carousel data by sort_order instead of a legacy position field', () => {
+        const dataFetcher = read('app/[lang]/(panel)/panel/mi-tienda/data.ts')
+
+        expect(dataFetcher).toContain(".order('sort_order', { ascending: true })")
+        expect(dataFetcher).not.toContain(".order('position', { ascending: true })")
+    })
+
+    it('ships a concrete base migration for carousel_slides', () => {
+        const migration = readFileSync(
+            join(ROOT, '..', '..', '..', 'supabase', 'migrations', '20260523_carousel_slides_base.sql'),
+            'utf-8'
+        )
+
+        expect(migration).toContain('CREATE TABLE IF NOT EXISTS public.carousel_slides')
+        expect(migration).toContain('CREATE POLICY "carousel_slides_select_public"')
+        expect(migration).toContain('tenant_id UUID NOT NULL')
+        expect(migration).toContain('sort_order INTEGER NOT NULL DEFAULT 0')
+    })
 })
