@@ -5,7 +5,7 @@
 #
 # Triggered: manually or after deploy completes.
 
-name: Lighthouse CI
+name: Lighthouse Deploy Audit
 
 on:
   workflow_dispatch:

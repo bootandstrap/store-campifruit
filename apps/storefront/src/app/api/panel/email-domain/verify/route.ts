@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { withPanelGuard } from '@/lib/panel-guard'
+import { toPanelErrorResponse } from '@/lib/panel-api-errors'
 import { logger } from '@/lib/logger'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
@@ -91,6 +92,9 @@ export async function POST() {
                 : '⏳ DNS records not yet propagated. Try again in a few minutes.',
         })
     } catch (e) {
+        const response = toPanelErrorResponse(e)
+        if (response) return response
+
         logger.error('[email-domain/verify] error:', e)
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }

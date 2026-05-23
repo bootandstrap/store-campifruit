@@ -8,6 +8,7 @@
  */
 
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { getConfig } from '@/lib/config'
 import { getDictionary, createTranslator, type Locale } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/server'
@@ -102,6 +103,8 @@ export default async function PanelLayout({
 }) {
     const { lang: urlLang } = await params
     const { config, featureFlags, planLimits } = await getConfig()
+    const headersList = await headers()
+    const nonce = headersList.get('x-csp-nonce') ?? undefined
 
     // ── Panel language resolution ──
     // The panel language is independent from the storefront language.
@@ -110,8 +113,6 @@ export default async function PanelLayout({
 
     // If URL locale doesn't match the panel language, redirect to the correct one
     if (urlLang !== panelLang) {
-        const { headers } = await import('next/headers')
-        const headersList = await headers()
         const pathname = headersList.get('x-invoke-path') || headersList.get('x-url') || `/${urlLang}/panel`
         const correctedPath = pathname.replace(`/${urlLang}/`, `/${panelLang}/`)
         redirect(correctedPath)
@@ -149,9 +150,7 @@ export default async function PanelLayout({
     }
 
     // ── Feature-flag sub-route guard (Defense in Depth) ──
-    const { headers } = await import('next/headers')
     const { shouldAllowPanelRoute } = await import('@/lib/panel-policy')
-    const headersList = await headers()
     const pathname = headersList.get('x-invoke-path') || headersList.get('x-middleware-invoke') || ''
     const pathSegments = pathname.split('/').filter(Boolean)
     const panelIndex = pathSegments.indexOf('panel')
@@ -289,7 +288,7 @@ export default async function PanelLayout({
     ) as Record<string, string>
 
     return (
-        <PanelThemeProvider>
+        <PanelThemeProvider nonce={nonce}>
         <PanelShell
             tenantId={config.tenant_id ?? undefined}
             lang={lang}

@@ -18,6 +18,9 @@ import * as path from 'path'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+const REPO_ROOT = path.resolve(process.cwd(), '../..')
+const MIGRATIONS_DIR = path.join(REPO_ROOT, 'supabase', 'migrations')
+
 function readFile(relativePath: string): string {
     const fullPath = path.resolve(process.cwd(), relativePath)
     return fs.readFileSync(fullPath, 'utf-8')
@@ -25,6 +28,19 @@ function readFile(relativePath: string): string {
 
 function fileExists(relativePath: string): boolean {
     return fs.existsSync(path.resolve(process.cwd(), relativePath))
+}
+
+function readRepoFile(relativePath: string): string {
+    return fs.readFileSync(path.join(REPO_ROOT, relativePath), 'utf-8')
+}
+
+function readAllMigrations(): string {
+    return fs
+        .readdirSync(MIGRATIONS_DIR)
+        .filter((file) => file.endsWith('.sql'))
+        .sort()
+        .map((file) => fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf-8'))
+        .join('\n')
 }
 
 // ── Authentication Guards ────────────────────────────────────────────────────
@@ -106,13 +122,10 @@ describe('Admin/Owner CRUD — RLS Cross-Tenant Isolation', () => {
         expect(panelGuard).not.toMatch(/SERVICE_ROLE|serviceRole|service_role/i)
     })
 
-    it('00_GROUND_TRUTH documents RLS policies for config table', () => {
-        const gt = readFile('../../../BOOTANDSTRAP_WEB/supabase/migrations/00_GROUND_TRUTH.sql')
-        const rlsSection = gt.includes('SECTION 4: RLS POLICIES')
-        expect(rlsSection).toBe(true)
-        expect(gt).toContain('TABLE: config')
-        const section4 = gt.slice(gt.indexOf('SECTION 4: RLS POLICIES'))
-        expect(section4).toContain('config')
+    it('local tenant migrations define tenant-scoped RLS policies for config', () => {
+        const migrations = readAllMigrations()
+        expect(migrations).toMatch(/CREATE POLICY "config_(select_tenant|select_owner_super_admin)"/)
+        expect(migrations).toMatch(/ON config/)
     })
 
     it('owner update config endpoint validates tenant ownership before write', () => {
@@ -152,28 +165,34 @@ describe('Admin/Owner CRUD — Rate Limiting Guards', () => {
         expect(rl).toMatch(/in-memory|memory|createRateLimiter/i)
     })
 
-    it('rate_limit_entries table documented in Ground Truth', () => {
-        const gt = readFile('../../../BOOTANDSTRAP_WEB/supabase/migrations/00_GROUND_TRUTH.sql')
-        expect(gt).toContain('TABLE: rate_limit_entries')
+    it('stripe webhook route applies the dedicated webhook guard before processing', () => {
+        const webhookRoute = readFile('src/app/api/webhooks/stripe/route.ts')
+        expect(webhookRoute).toContain('withRateLimit')
+        expect(webhookRoute).toContain('WEBHOOK_GUARD')
     })
 })
 
 // ── Idempotency ────────────────────────────────────────────────────────────────
 
 describe('Admin/Owner CRUD — Mutation Idempotency', () => {
-    it('mutation-processor.ts implements L1 in-memory idempotency', () => {
-        const mp = readFile('../../../BOOTANDSTRAP_WEB/src/lib/governance/engine/mutation-processor.ts')
-        expect(mp).toMatch(/Map|cache|L1|inMemory|pending/i)
+    it('stripe webhook route uses claim-and-mark RPCs for atomic idempotency', () => {
+        const route = readFile('src/app/api/webhooks/stripe/route.ts')
+        expect(route).toContain("rpc('claim_webhook_event'")
+        expect(route).toContain("rpc('mark_webhook_processed'")
+        expect(route).toContain("rpc('mark_webhook_failed'")
     })
 
-    it('idempotency_keys table exists in Ground Truth (L2 persistence)', () => {
-        const gt = readFile('../../../BOOTANDSTRAP_WEB/supabase/migrations/00_GROUND_TRUTH.sql')
-        expect(gt).toContain('TABLE: idempotency_keys')
+    it('database types expose webhook idempotency RPCs to the storefront', () => {
+        const databaseTypes = readFile('src/lib/supabase/database.types.ts')
+        expect(databaseTypes).toContain('claim_webhook_event')
+        expect(databaseTypes).toContain('mark_webhook_processed')
+        expect(databaseTypes).toContain('mark_webhook_failed')
     })
 
-    it('cleanup_expired_idempotency_keys RPC in Ground Truth functions section', () => {
-        const gt = readFile('../../../BOOTANDSTRAP_WEB/supabase/migrations/00_GROUND_TRUTH.sql')
-        expect(gt).toContain('cleanup_expired_idempotency_keys')
+    it('security hardening migration restricts dangerous security definer RPCs from anon', () => {
+        const securityHardening = readRepoFile('supabase/migrations/20260406_security_hardening.sql')
+        expect(securityHardening).toContain('dangerous SECURITY DEFINER functions')
+        expect(securityHardening).toContain('claim_webhook_event')
     })
 })
 
@@ -209,20 +228,17 @@ describe('Admin/Owner CRUD — Data Privacy & Security', () => {
         }
     })
 
-    it('store_tenant_secret RPC used for sensitive credential storage (not plaintext config)', () => {
-        const gt = readFile('../../../BOOTANDSTRAP_WEB/supabase/migrations/00_GROUND_TRUTH.sql')
-        expect(gt).toContain('store_tenant_secret')
-        expect(gt).toContain('get_tenant_secret')
+    it('database types expose tenant secret storage RPCs for sensitive credentials', () => {
+        const databaseTypes = readFile('src/lib/supabase/database.types.ts')
+        expect(databaseTypes).toContain('store_tenant_secret')
+        expect(databaseTypes).toContain('get_tenant_secret')
     })
 
-    it('store_medusa_credentials and get_medusa_credentials use SECURITY DEFINER', () => {
-        const gt = readFile('../../../BOOTANDSTRAP_WEB/supabase/migrations/00_GROUND_TRUTH.sql')
-        expect(gt).toContain('store_medusa_credentials')
-        expect(gt).toContain('get_medusa_credentials')
-        const storeFnIdx = gt.indexOf('store_medusa_credentials')
-        const getMedusaFnIdx = gt.indexOf('get_medusa_credentials')
-        expect(storeFnIdx).toBeGreaterThan(-1)
-        expect(getMedusaFnIdx).toBeGreaterThan(-1)
+    it('security hardening migration protects Medusa credential RPCs', () => {
+        const securityHardening = readRepoFile('supabase/migrations/20260406_security_hardening.sql')
+        expect(securityHardening).toContain('store_medusa_credentials')
+        expect(securityHardening).toContain('get_medusa_credentials')
+        expect(securityHardening).toContain('REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM anon')
     })
 })
 

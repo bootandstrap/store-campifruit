@@ -30,14 +30,9 @@ CREATE TABLE IF NOT EXISTS email_preferences (
 ALTER TABLE email_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Service role full access (storefront uses admin client)
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'email_preferences' AND policyname = 'service_email_preferences'
-  ) THEN
-    CREATE POLICY "service_email_preferences" ON email_preferences
-      FOR ALL TO service_role USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "service_email_preferences" ON email_preferences;
+CREATE POLICY "service_email_preferences" ON email_preferences
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Auto-create on tenant provisioning
 CREATE OR REPLACE FUNCTION trg_create_email_preferences()

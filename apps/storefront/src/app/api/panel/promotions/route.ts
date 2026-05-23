@@ -9,6 +9,7 @@ import { withRateLimit, PANEL_GUARD } from '@/lib/security/api-rate-guard'
 import { getTenantMedusaScope } from '@/lib/medusa/tenant-scope'
 import { createPromotion } from '@/lib/medusa/admin-promotions'
 import type { CreatePromotionInput } from '@/lib/medusa/admin-promotions'
+import { toPanelErrorResponse } from '@/lib/panel-api-errors'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
@@ -26,9 +27,12 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({ promotion })
     } catch (err) {
+        const response = toPanelErrorResponse(err)
+        if (response) return response
+
         logger.error('[api/panel/promotions] POST error:', err)
         return NextResponse.json(
-            { error: err instanceof Error ? err.message : 'Internal error' },
+            { error: 'Internal error' },
             { status: 500 }
         )
     }

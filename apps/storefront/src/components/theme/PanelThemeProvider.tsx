@@ -6,6 +6,8 @@ interface PanelThemeProviderProps {
     children: React.ReactNode
     /** Server-side default from tenant config (light | dark | system) */
     defaultTheme?: string
+    /** CSP nonce for next-themes inline hydration script */
+    nonce?: string
 }
 
 /**
@@ -18,12 +20,13 @@ interface PanelThemeProviderProps {
  * The `attribute="class"` strategy adds/removes the `dark` class,
  * consistent with our globals.css variables.
  */
-export function PanelThemeProvider({ children, defaultTheme = 'system' }: PanelThemeProviderProps) {
+export function PanelThemeProvider({ children, defaultTheme = 'system', nonce }: PanelThemeProviderProps) {
     return (
         <NextThemesProvider
             attribute="class"
             defaultTheme={defaultTheme}
             storageKey="panel-theme"
+            nonce={nonce}
             enableSystem
             disableTransitionOnChange={false}
         >

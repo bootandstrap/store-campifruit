@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withPanelGuard } from '@/lib/panel-guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { withRateLimit, PANEL_GUARD } from '@/lib/security/api-rate-guard'
+import { toPanelErrorResponse } from '@/lib/panel-api-errors'
 import { logger } from '@/lib/logger'
 
 /**
@@ -66,9 +67,9 @@ export async function POST(req: NextRequest) {
             message: 'Export started. You will receive a download link via email.',
         })
     } catch (error) {
-        if (error instanceof Error && error.message.includes('Unauthorized')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        const response = toPanelErrorResponse(error)
+        if (response) return response
+
         logger.error('[data-export] Error:', error)
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
@@ -103,9 +104,9 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ exports })
     } catch (error) {
-        if (error instanceof Error && error.message.includes('Unauthorized')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        const response = toPanelErrorResponse(error)
+        if (response) return response
+
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
 }

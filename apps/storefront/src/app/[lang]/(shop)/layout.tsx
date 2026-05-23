@@ -17,20 +17,22 @@ import { getCategories } from '@/lib/medusa/client'
 import { getCurrency } from '@/lib/i18n/currencies-server'
 import { getDictionary, type Locale } from '@/lib/i18n'
 import { createTranslator } from '@/lib/i18n'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
-import CartDrawer from '@/components/cart/CartDrawer'
-import BottomNav from '@/components/layout/BottomNav'
-import { DeferredChatWidget } from '@/components/chat/DeferredChatWidget'
-import CookieConsentBanner from '@/components/consent/CookieConsentBanner'
-import CompareBarWrapper from '@/components/products/CompareBar'
 import { createClient } from '@/lib/supabase/server'
 import type { ChatTier } from '@/lib/chat/client-config'
 import Script from 'next/script'
-import { cookies } from 'next/headers'
-import { ThemeProvider } from '@/components/theme/ThemeProvider'
-import WebVitalsReporter from '@/components/WebVitalsReporter'
+import { cookies, headers } from 'next/headers'
 import { getCanonicalSiteUrl } from '@/lib/seo/site-url'
+import {
+    Header,
+    Footer,
+    CartDrawer,
+    BottomNav,
+    DeferredChatWidget,
+    CookieConsentBanner,
+    CompareBarWrapper,
+    ThemeProvider,
+    WebVitalsReporter,
+} from './shop-layout-chrome'
 
 /**
  * Shop layout metadata — provides title.template so every child page
@@ -76,6 +78,8 @@ export default async function ShopLayout({
     const currentCurrency = await getCurrency(config.default_currency)
     const dictionary = await getDictionary(lang as Locale)
     const t = createTranslator(dictionary)
+    const headersList = await headers()
+    const nonce = headersList.get('x-csp-nonce') ?? undefined
 
     const cookieStore = await cookies()
     const isSimulating = cookieStore.get('simulating_client')?.value === 'true'
@@ -137,7 +141,7 @@ export default async function ShopLayout({
     }
 
     return (
-        <ThemeProvider defaultTheme={config.theme_mode || 'light'}>
+        <ThemeProvider defaultTheme={config.theme_mode || 'light'} nonce={nonce}>
             {isSimulating && (
                 <a
                     href={`/api/admin/stop_simulation?lang=${lang}`}
@@ -230,9 +234,10 @@ export default async function ShopLayout({
                 <>
                     <Script
                         src={`https://www.googletagmanager.com/gtag/js?id=${config.google_analytics_id}`}
+                        nonce={nonce}
                         strategy="afterInteractive"
                     />
-                    <Script id="gtag-init" strategy="afterInteractive">
+                    <Script id="gtag-init" nonce={nonce} strategy="afterInteractive">
                         {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${config.google_analytics_id}');`}
                     </Script>
                 </>
@@ -240,7 +245,7 @@ export default async function ShopLayout({
 
             {/* Facebook Pixel — reads ID from config (already cached) */}
             {featureFlags.enable_analytics && config.facebook_pixel_id && /^[0-9]+$/.test(config.facebook_pixel_id) && (
-                <Script id="fb-pixel" strategy="afterInteractive">
+                <Script id="fb-pixel" nonce={nonce} strategy="afterInteractive">
                     {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${config.facebook_pixel_id}');fbq('track','PageView');`}
                 </Script>
             )}

@@ -10,6 +10,7 @@ import { withRateLimit, PANEL_GUARD } from '@/lib/security/api-rate-guard'
 import { getTenantSlug } from '@/lib/backup/tenant-slug'
 import { getTenantMedusaScope } from '@/lib/medusa/tenant-scope'
 import { executeRestore } from '@/lib/backup/backup-restore'
+import { toPanelErrorResponse } from '@/lib/panel-api-errors'
 import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
@@ -55,9 +56,12 @@ export async function POST(request: NextRequest) {
             errors: result.errors.slice(0, 20), // Cap error list
         }, { status: result.success ? 200 : 207 }) // 207 = Multi-Status (partial success)
     } catch (err) {
+        const response = toPanelErrorResponse(err)
+        if (response) return response
+
         logger.error('[vault/restore] POST error:', err)
         return NextResponse.json(
-            { error: err instanceof Error ? err.message : 'Internal error' },
+            { error: 'Internal error' },
             { status: 500 }
         )
     }

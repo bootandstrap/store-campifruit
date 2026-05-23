@@ -20,6 +20,7 @@ type AnalyticsEvent =
     | 'search'
     | 'category_view'
     | 'whatsapp_click'
+    | 'web_vital'
 
 let _analyticsEnabled: boolean | null = null
 

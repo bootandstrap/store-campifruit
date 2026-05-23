@@ -23,11 +23,19 @@ export const dynamic = 'force-dynamic'
 // ---------------------------------------------------------------------------
 
 const MAX_PROPERTIES_SIZE = 4096 // bytes
+const MAX_BATCH_SIZE = 50
 const analyticsLimiter = createSmartRateLimiter({
     limit: 60,
     windowMs: 60_000,
     name: 'api-analytics',
 })
+
+type IncomingAnalyticsEvent = {
+    event_type?: unknown
+    properties?: unknown
+    page_url?: unknown
+    referrer?: unknown
+}
 
 // ---------------------------------------------------------------------------
 // POST /api/analytics
@@ -54,21 +62,13 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const { event_type, properties, page_url, referrer } = body
+        const events = Array.isArray((body as { events?: unknown[] }).events)
+            ? (body as { events: IncomingAnalyticsEvent[] }).events
+            : [body as IncomingAnalyticsEvent]
 
-        // Validate event_type
-        if (!ANALYTICS_EVENT_SET.has(event_type)) {
+        if (events.length === 0 || events.length > MAX_BATCH_SIZE) {
             return NextResponse.json(
-                { error: 'invalid_event_type' },
-                { status: 400 }
-            )
-        }
-
-        // Validate properties size
-        const propsStr = properties ? JSON.stringify(properties) : '{}'
-        if (propsStr.length > MAX_PROPERTIES_SIZE) {
-            return NextResponse.json(
-                { error: 'properties_too_large' },
+                { error: 'invalid_batch_size' },
                 { status: 400 }
             )
         }
@@ -85,13 +85,36 @@ export async function POST(request: NextRequest) {
         // Use service-role client for trusted insert.
         const supabase = createAdminClient()
 
-        const { error: insertError } = await supabase.from('analytics_events').insert({
-            event_type,
-            properties: properties || {},
-            page_url: typeof page_url === 'string' ? page_url.slice(0, 2048) : null,
-            referrer: typeof referrer === 'string' ? referrer.slice(0, 2048) : null,
-            tenant_id: tenantId,
-        } as never)
+        const rows = []
+        for (const event of events) {
+            if (!ANALYTICS_EVENT_SET.has(String(event.event_type ?? ''))) {
+                return NextResponse.json(
+                    { error: 'invalid_event_type' },
+                    { status: 400 }
+                )
+            }
+
+            const properties = event.properties && typeof event.properties === 'object'
+                ? event.properties
+                : {}
+            const propsStr = JSON.stringify(properties)
+            if (propsStr.length > MAX_PROPERTIES_SIZE) {
+                return NextResponse.json(
+                    { error: 'properties_too_large' },
+                    { status: 400 }
+                )
+            }
+
+            rows.push({
+                event_type: String(event.event_type),
+                properties,
+                page_url: typeof event.page_url === 'string' ? event.page_url.slice(0, 2048) : null,
+                referrer: typeof event.referrer === 'string' ? event.referrer.slice(0, 2048) : null,
+                tenant_id: tenantId,
+            })
+        }
+
+        const { error: insertError } = await supabase.from('analytics_events').insert(rows as never)
 
         if (insertError) {
             logger.error('[analytics] insert failed:', insertError.message)

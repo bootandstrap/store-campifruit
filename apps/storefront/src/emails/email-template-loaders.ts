@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
-import type { EmailTemplate, LayoutComponent } from './types'
+import type { EmailTemplate } from './types'
+export { loadEmailLayout } from './email-layout-loaders'
 
 const templateLoaders: Record<EmailTemplate, () => Promise<{ default: ComponentType<any> }>> = {
     order_confirmation: () => import('@/emails/OrderConfirmation'),
@@ -15,22 +16,6 @@ const templateLoaders: Record<EmailTemplate, () => Promise<{ default: ComponentT
     review_request: () => import('@/emails/ReviewRequest'),
     abandoned_cart: () => import('@/emails/AbandonedCart'),
     pos_receipt: () => import('@/emails/POSReceipt'),
-}
-
-const layoutLoaders: Record<string, () => Promise<{ default: LayoutComponent }>> = {
-    minimal: () => import('@/emails/layouts/MinimalLayout'),
-    brand: () => import('@/emails/layouts/BrandLayout'),
-    modern: () => import('@/emails/layouts/ModernLayout'),
-}
-
-export async function loadEmailLayout(slug: string): Promise<LayoutComponent> {
-    const loader = layoutLoaders[slug]
-    if (!loader) {
-        const fallback = await layoutLoaders.minimal()
-        return fallback.default
-    }
-    const mod = await loader()
-    return mod.default
 }
 
 export async function loadEmailTemplate(

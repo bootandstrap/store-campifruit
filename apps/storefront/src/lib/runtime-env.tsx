@@ -65,11 +65,12 @@ export function getServerRuntimeEnv(): Record<RuntimeEnvKey, string> {
  *   )
  * }
  */
-export function RuntimeEnvScript() {
+export function RuntimeEnvScript({ nonce }: { nonce?: string }) {
     const env = getServerRuntimeEnv()
     const script = `window.__RUNTIME_ENV__=${JSON.stringify(env)};`
     return (
         <script
+            nonce={nonce}
             dangerouslySetInnerHTML={{ __html: script }}
             // Execute before any client JS hydrates
             // suppressHydrationWarning avoids mismatch warnings

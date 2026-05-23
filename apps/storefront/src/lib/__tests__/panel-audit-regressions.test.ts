@@ -125,7 +125,10 @@ describe('panel/storefront audit regressions', () => {
             'utf-8'
         )
 
-        expect(lhci).toContain('pnpm --dir apps/storefront start')
+        expect(lhci).toContain('cd apps/storefront/.next/standalone')
+        expect(lhci).toContain('cp -R ../static apps/storefront/.next/static')
+        expect(lhci).toContain('cp -R ../../public apps/storefront/public')
+        expect(lhci).toContain('node apps/storefront/server.js')
         expect(lhci).not.toContain('"startServerCommand": "pnpm start"')
     })
 

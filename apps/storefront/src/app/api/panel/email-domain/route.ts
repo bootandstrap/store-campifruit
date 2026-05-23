@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePanelAuth } from '@/lib/panel-auth'
+import { toPanelErrorResponse } from '@/lib/panel-api-errors'
 import { logger } from '@/lib/logger'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
@@ -112,6 +113,9 @@ export async function GET() {
             records,
         })
     } catch (e) {
+        const response = toPanelErrorResponse(e)
+        if (response) return response
+
         logger.error('[email-domain] GET error:', e)
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
@@ -222,6 +226,9 @@ export async function POST(req: NextRequest) {
             message: 'Domain registered. Add the DNS records shown below, then click Verify.',
         })
     } catch (e) {
+        const response = toPanelErrorResponse(e)
+        if (response) return response
+
         logger.error('[email-domain] POST error:', e)
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
@@ -267,6 +274,9 @@ export async function DELETE() {
 
         return NextResponse.json({ success: true, message: 'Custom domain removed' })
     } catch (e) {
+        const response = toPanelErrorResponse(e)
+        if (response) return response
+
         logger.error('[email-domain] DELETE error:', e)
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
