@@ -1917,5 +1917,14 @@
   "panel.i18n.saveError": "Error al guardar, inténtalo de nuevo",
   "panel.i18n.limitReached": "Límite de idiomas alcanzado — actualiza tu plan",
   "panel.i18n.upgradePrompt": "Ver planes",
-  "panel.i18n.cannotDeactivateLast": "Debes mantener al menos un idioma activo"
+  "panel.i18n.cannotDeactivateLast": "Debes mantener al menos un idioma activo",
+  "panel.dashboard.viewStorefront": "Ver tienda",
+  "panel.chart.last30": "Últimos 30 días",
+  "panel.chart.noData": "Sin datos todavía",
+  "panel.governance.modules": "módulos",
+  "panel.governance.limitAlerts": "alertas de límite",
+  "panel.governance.allClear": "Todo en orden",
+  "panel.governance.trial": "Prueba",
+  "panel.governance.active": "Activo",
+  "panel.tabs.promotions": "Promociones"
 }

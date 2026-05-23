@@ -123,12 +123,12 @@ export default async function PanelLayout({
     let readinessScore = 0
     let readinessRemaining = 0
 
-    if (config.onboarding_completed) {
-        try {
-            const readiness = await calculateStoreReadiness(tenantId, lang)
-            readinessScore = readiness.score
-            readinessRemaining = readiness.checks.filter(c => !c.done).length
+    try {
+        const readiness = await calculateStoreReadiness(tenantId, lang)
+        readinessScore = readiness.score
+        readinessRemaining = readiness.checks.filter(c => !c.done).length
 
+        if (config.onboarding_completed) {
             const achCtx: AchievementContext = {
                 productCount: metrics.productCount,
                 categoryCount: metrics.categoryCount,
@@ -143,9 +143,9 @@ export default async function PanelLayout({
                 revenueThisMonth: metrics.revenue.revenueThisMonth,
             }
             achievementUnlockedIds = evaluateAchievements(achCtx)
-        } catch {
-            // Degrade gracefully
         }
+    } catch {
+        // Degrade gracefully
     }
 
     // Pre-compute new IDs server-side so the client only gets truly new ones
@@ -218,6 +218,7 @@ export default async function PanelLayout({
             pos: t('panel.section.pos'),
             ownerPanel: t('panel.nav.ownerPanel'),
             backToStore: t('panel.nav.backToStore'),
+            health: t('storeHealth.title'),
         },
         featureFlags,
     })
@@ -281,6 +282,7 @@ export default async function PanelLayout({
                 pos: t('panel.section.pos'),
                 ownerPanel: t('panel.nav.ownerPanel'),
                 backToStore: t('panel.nav.backToStore'),
+                health: t('storeHealth.title'),
             }}
             featureFlags={{
                 enable_carousel: featureFlags.enable_carousel,
@@ -367,4 +369,3 @@ export default async function PanelLayout({
         </PanelThemeProvider>
     )
 }
-

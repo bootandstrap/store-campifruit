@@ -1917,5 +1917,14 @@
   "panel.social.tabSettings": "Settings",
   "panel.social.tiktok": "TikTok",
   "panel.social.tiktokDesc": "Connect your TikTok account",
-  "panel.social.title": "Social Media"
+  "panel.social.title": "Social Media",
+  "panel.dashboard.viewStorefront": "Storefront",
+  "panel.chart.last30": "Last 30 days",
+  "panel.chart.noData": "No data yet",
+  "panel.governance.modules": "modules",
+  "panel.governance.limitAlerts": "limit alerts",
+  "panel.governance.allClear": "All clear",
+  "panel.governance.trial": "Trial",
+  "panel.governance.active": "Active",
+  "panel.tabs.promotions": "Promotions"
 }

@@ -1882,5 +1882,14 @@
   "wishlist.itemSingular": "article",
   "wishlist.productUnavailable": "Produit non disponible",
   "wishlist.remove": "Retirer des favoris",
-  "wishlist.viewProduct": "Voir le produit"
+  "wishlist.viewProduct": "Voir le produit",
+  "panel.dashboard.viewStorefront": "Voir la boutique",
+  "panel.chart.last30": "30 derniers jours",
+  "panel.chart.noData": "Pas encore de données",
+  "panel.governance.modules": "modules",
+  "panel.governance.limitAlerts": "alertes de limite",
+  "panel.governance.allClear": "Tout est bon",
+  "panel.governance.trial": "Essai",
+  "panel.governance.active": "Actif",
+  "panel.tabs.promotions": "Promotions"
 }

@@ -11,7 +11,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/storefront/package.json ./apps/storefront/
 
-RUN pnpm install --prod=false --filter storefront...
+RUN pnpm install --frozen-lockfile --prod=false --filter storefront...
 
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app

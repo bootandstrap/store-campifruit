@@ -51,6 +51,7 @@ export interface PanelSidebarLabels {
     pos: string
     ownerPanel: string
     backToStore: string
+    health: string
 }
 
 // ── Navigation Types ──────────────────────────────────────────────────────
