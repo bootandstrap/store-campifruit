@@ -159,8 +159,8 @@ describe('Security Posture — Enterprise Invariants', () => {
             reportDegradedMode('tenant-test-1', 'Supabase timeout')
 
             expect(consoleSpy).toHaveBeenCalledTimes(1)
-            const logStr = consoleSpy.mock.calls[0][0] as string
-            const log = JSON.parse(logStr)
+            const outerLog = JSON.parse(consoleSpy.mock.calls[0][0] as string)
+            const log = JSON.parse(outerLog.message)
 
             // Required APM fields
             expect(log.level).toBe('error')

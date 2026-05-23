@@ -95,7 +95,7 @@ export default function ModernLayout({
                             background: `linear-gradient(90deg, ${brandColor}, ${lighter}, transparent)`,
                         }} />
                         
-                        {children}
+                        {children as Parameters<typeof Section>[0]['children']}
                     </Section>
 
                     {/* ━━ Rich Footer ━━ */}

@@ -12,9 +12,9 @@ import type AutomationModuleService from "../modules/automation/service"
  * When an order is placed, checks for active automation rules
  * triggered by `order.placed` and logs executions.
  *
- * GOVERNANCE: Gated on `enable_automation` — skipped if Automation module is disabled.
+ * GOVERNANCE: Gated on `enable_automations` — skipped if Automation module is disabled.
  */
-export default withGovernanceGate("enable_automation", async ({
+export default withGovernanceGate("enable_automations", async ({
     event: { data },
     container,
 }: SubscriberArgs<{ id: string }>) => {
@@ -23,7 +23,7 @@ export default withGovernanceGate("enable_automation", async ({
 
         // Find active rules triggered by order.placed
         const rules = await automationService.listAutomationRules(
-            { trigger_event: "order.placed", status: "active" },
+            { trigger_event: "order.placed", is_active: true },
             { take: 50 }
         )
 

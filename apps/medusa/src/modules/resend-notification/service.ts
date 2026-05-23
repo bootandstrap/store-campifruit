@@ -71,22 +71,21 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
      * @param notification - The notification payload from Medusa
      * @returns Provider-specific response data
      */
-    async send(notification: {
-        to: string
-        channel: string
-        template?: string
-        data?: Record<string, unknown>
-    }): Promise<Record<string, unknown>> {
+    async send(
+        notification: Parameters<AbstractNotificationProviderService["send"]>[0]
+    ): Promise<Awaited<ReturnType<AbstractNotificationProviderService["send"]>>> {
+        type ProviderResult = Awaited<ReturnType<AbstractNotificationProviderService["send"]>>
+
         // Only handle email channel
         if (notification.channel !== "email") {
             this.logger.debug(`[resend-notification] Skipping non-email channel: ${notification.channel}`)
-            return { sent: false, reason: "non-email channel" }
+            return {} as ProviderResult
         }
 
-        const data = notification.data as unknown as NotificationData
+        const data = notification.data as NotificationData | null | undefined
         if (!data?.to && !notification.to) {
             this.logger.warn("[resend-notification] No recipient — skipping")
-            return { sent: false, reason: "no recipient" }
+            return {} as ProviderResult
         }
 
         try {
@@ -104,13 +103,13 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
                 `[resend-notification] Email sent to ${data?.to || notification.to} (${data?.subject || "no subject"})`
             )
 
-            return { sent: true, id: result.data?.id }
+            return { id: result.data?.id } as ProviderResult
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error)
             this.logger.error(`[resend-notification] Failed to send email: ${msg}`)
 
             // Don't throw — notification failures should not break order flows
-            return { sent: false, error: msg }
+            return { error: msg } as ProviderResult
         }
     }
 }

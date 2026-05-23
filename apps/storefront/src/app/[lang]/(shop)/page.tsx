@@ -16,12 +16,13 @@ import {
   ProductGridSkeleton,
 } from '@/components/ui/Skeleton'
 import { logger } from '@/lib/logger'
+import { getCanonicalSiteUrl } from '@/lib/seo/site-url'
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   const { config } = await getConfig()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const siteUrl = await getCanonicalSiteUrl()
   return {
     title: config.meta_title || config.business_name || 'Online Store',
     description:
@@ -49,6 +50,7 @@ export default async function HomePage({
   const { lang } = await params
   const { config, featureFlags } = await getConfig()
   const dictionary = await getDictionary(lang as Locale)
+  const siteUrl = await getCanonicalSiteUrl()
 
   // Fetch carousel slides if feature is enabled
   let carouselSlides: import('@/components/home/HeroCarousel').CarouselSlide[] = []
@@ -75,11 +77,11 @@ export default async function HomePage({
       {/* Structured Data — Organization + WebSite with SearchAction */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLD(config)) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLD(config, siteUrl)) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLD(config)) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLD(config, siteUrl)) }}
       />
 
       <div id="main-content" className="container-page py-6 space-y-4 md:space-y-8">

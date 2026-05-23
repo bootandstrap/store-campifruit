@@ -35,11 +35,6 @@ import {
 import type { POSProduct, POSCategory } from '@/lib/pos/pos-product-types'
 import type { FeatureFlags, PlanLimits } from '@/lib/config'
 import { charge } from '@/lib/pos/payments/payment-adapter'
-import { usePOSSounds, triggerHaptic } from '@/lib/pos/usePOSSounds'
-import { useBarcodeScanner } from '@/lib/pos/useBarcodeScanner'
-import { useOfflineSync } from '@/lib/pos/offline/useOfflineSync'
-import { usePrinterConnection, type BusinessInfo } from '@/lib/pos/usePrinterConnection'
-import { usePOSSync, type POSSyncEvent } from '@/lib/pos/usePOSSync'
 import { getEnabledPOSPaymentMethods, isPOSHistoryAvailable, isPOSDashboardAvailable, formatPOSCurrency } from '@/lib/pos/pos-utils'
 import { posLabel } from '@/lib/pos/pos-i18n'
 import { PageEntrance } from '@/components/panel/PanelAnimations'
@@ -47,6 +42,16 @@ import { createPOSSale, searchPOSProducts } from './actions'
 import { POSProductGrid, POSCart, POSPaymentOverlay, POSOfflineBanner, POSToolbar, getParkedSales } from './pos-components'
 import POSSidePanelManager from './POSSidePanelManager'
 import POSMobileCartSheet from './POSMobileCartSheet'
+import {
+    usePOSSounds,
+    triggerHaptic,
+    useBarcodeScanner,
+    useOfflineSync,
+    usePrinterConnection,
+    usePOSSync,
+    type BusinessInfo,
+    type POSSyncEvent,
+} from './pos-runtime'
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 

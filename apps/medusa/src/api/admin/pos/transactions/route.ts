@@ -2,6 +2,22 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { POS_MODULE } from "../../../../modules/pos"
 import type PosModuleService from "../../../../modules/pos/service"
 
+type PosPaymentMethod = "cash" | "card" | "mixed" | "voucher" | "other"
+
+const POS_PAYMENT_METHODS = new Set<PosPaymentMethod>([
+    "cash",
+    "card",
+    "mixed",
+    "voucher",
+    "other",
+])
+
+function normalizePaymentMethod(value: string): PosPaymentMethod {
+    return POS_PAYMENT_METHODS.has(value as PosPaymentMethod)
+        ? (value as PosPaymentMethod)
+        : "other"
+}
+
 /**
  * GET /admin/pos/transactions
  * List POS transactions with optional session filter
@@ -41,9 +57,15 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     }
 
     const service = req.scope.resolve(POS_MODULE) as PosModuleService
+    const paymentMethod = normalizePaymentMethod(body.payment_method)
 
     const transaction = await service.createPosTransactions({
-        ...body,
+        session_id: body.session_id,
+        order_id: body.order_id ?? null,
+        amount: body.amount,
+        currency_code: body.currency_code,
+        payment_method: paymentMethod,
+        receipt_number: body.receipt_number ?? null,
         status: "completed",
     })
 

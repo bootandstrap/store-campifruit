@@ -1,8 +1,8 @@
 "use client";
 
-import { type ComponentType, type HTMLAttributes, type ReactNode, type Ref, createContext, useContext } from "react";
+import { type ComponentType, type HTMLAttributes, createContext, useContext } from "react";
 import { HelpCircle, InfoCircle } from "@untitledui/icons";
-import type { InputProps as AriaInputProps, TextFieldProps as AriaTextFieldProps } from "react-aria-components";
+import type { InputProps as AriaInputProps, TextFieldProps as AriaTextFieldProps, TextProps as AriaTextProps } from "react-aria-components";
 import { Group as AriaGroup, Input as AriaInput, TextField as AriaTextField } from "react-aria-components";
 import { HintText } from "@/components/ui/input/hint-text";
 import { Label } from "@/components/ui/input/label";
@@ -29,17 +29,13 @@ export interface InputBaseProps extends TextFieldProps {
     tooltipClassName?: string;
     /** Keyboard shortcut to display. */
     shortcut?: string | boolean;
-    ref?: Ref<HTMLInputElement>;
-    groupRef?: Ref<HTMLDivElement>;
     /** Icon component to display on the left side of the input. */
     icon?: ComponentType<HTMLAttributes<HTMLOrSVGElement>>;
 }
 
 export const InputBase = ({
-    ref,
     tooltip,
     shortcut,
-    groupRef,
     size = "sm",
     isInvalid,
     isDisabled,
@@ -80,7 +76,6 @@ export const InputBase = ({
     return (
         <AriaGroup
             {...{ isDisabled, isInvalid }}
-            ref={groupRef}
             className={({ isFocusWithin, isDisabled, isInvalid }) =>
                 cx(
                     "relative flex w-full flex-row place-content-center place-items-center rounded-lg bg-brand shadow-xs ring-1 ring-brand transition-shadow duration-100 ease-linear ring-inset",
@@ -120,7 +115,6 @@ export const InputBase = ({
             {/* Input field */}
             <AriaInput
                 {...(inputProps as AriaInputProps)}
-                ref={ref}
                 placeholder={placeholder}
                 className={cx(
                     "m-0 w-full bg-transparent text-md text-brand ring-0 outline-hidden placeholder:text-placeholder autofill:rounded-lg autofill:text-brand",
@@ -188,14 +182,13 @@ interface BaseProps {
     /** Label text for the input */
     label?: string;
     /** Helper text displayed below the input */
-    hint?: ReactNode;
+    hint?: AriaTextProps["children"];
 }
 
 interface TextFieldProps
     extends BaseProps,
         AriaTextFieldProps,
         Pick<InputBaseProps, "size" | "wrapperClassName" | "inputClassName" | "iconClassName" | "tooltipClassName"> {
-    ref?: Ref<HTMLDivElement>;
 }
 
 const TextFieldContext = createContext<TextFieldProps>({});
@@ -230,8 +223,6 @@ export const Input = ({
     shortcut,
     hideRequiredIndicator,
     className,
-    ref,
-    groupRef,
     tooltip,
     iconClassName,
     inputClassName,
@@ -247,8 +238,6 @@ export const Input = ({
 
                     <InputBase
                         {...{
-                            ref,
-                            groupRef,
                             size,
                             placeholder,
                             icon: Icon,

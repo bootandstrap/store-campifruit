@@ -30,6 +30,7 @@ import Script from 'next/script'
 import { cookies } from 'next/headers'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import WebVitalsReporter from '@/components/WebVitalsReporter'
+import { getCanonicalSiteUrl } from '@/lib/seo/site-url'
 
 /**
  * Shop layout metadata — provides title.template so every child page
@@ -44,7 +45,7 @@ export async function generateMetadata({
     const { lang } = await params
     const { config } = await getConfig()
     const businessName = config.business_name || 'Store'
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+    const siteUrl = await getCanonicalSiteUrl()
 
     return {
         title: {
@@ -249,4 +250,3 @@ export default async function ShopLayout({
         </ThemeProvider>
     )
 }
-

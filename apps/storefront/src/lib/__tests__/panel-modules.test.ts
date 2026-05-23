@@ -40,6 +40,7 @@ function baseLabels() {
         modules: 'Modules',
         settings: 'Settings',
         pos: 'POS',
+        health: 'Health',
         ownerPanel: 'Owner Panel',
         backToStore: 'Back to store',
     }
@@ -79,12 +80,9 @@ describe('panel-modules', () => {
         expect(shouldAllowPanelRoute('admin', baseFlags())).toBe(false)
     })
 
-    it('legacy routes are allowed at guard level (redirected by next.config.ts)', () => {
-        // Legacy routes like carrusel, insignias are permanently redirected by
-        // next.config.ts (301) before reaching the route guard. The guard allows
-        // them because they map to valid sections in ROUTE_REDIRECT_MAP.
-        expect(isAdvancedPanelRouteEnabled('/es/panel/carrusel', liteFlags())).toBe(true)
-        expect(isAdvancedPanelRouteEnabled('/es/panel/insignias', liteFlags())).toBe(true)
+    it('owner-lite blocks advanced legacy routes at guard level', () => {
+        expect(isAdvancedPanelRouteEnabled('/es/panel/carrusel', liteFlags())).toBe(false)
+        expect(isAdvancedPanelRouteEnabled('/es/panel/insignias', liteFlags())).toBe(false)
     })
 
     it('primary routes always pass the guard', () => {

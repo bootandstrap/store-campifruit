@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requirePanelAuth } from '@/lib/panel-auth'
+import { withPanelGuard } from '@/lib/panel-guard'
 import { logger } from '@/lib/logger'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
@@ -11,7 +11,9 @@ const RESEND_API_URL = 'https://api.resend.com'
  */
 export async function POST() {
     try {
-        const { tenantId, supabase } = await requirePanelAuth()
+        const { tenantId, supabase } = await withPanelGuard({
+            requiredFlag: 'enable_custom_email_domain',
+        })
 
         // Get domain ID from config
         const { data: config } = await supabase

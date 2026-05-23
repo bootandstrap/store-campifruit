@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { createContext, isValidElement, useContext } from "react";
 import { ArrowDown, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
 import type {
@@ -103,7 +103,7 @@ const TableCardHeader = ({ title, badge, description, contentTrailing, className
     );
 };
 
-interface TableRootProps extends AriaTableProps, Omit<ComponentPropsWithRef<"table">, "className" | "slot" | "style"> {
+interface TableRootProps extends AriaTableProps {
     size?: "sm" | "md";
 }
 
@@ -120,9 +120,7 @@ const TableRoot = ({ className, size = "md", ...props }: TableRootProps) => {
 };
 TableRoot.displayName = "Table";
 
-interface TableHeaderProps<T extends object>
-    extends AriaTableHeaderProps<T>,
-        Omit<ComponentPropsWithRef<"thead">, "children" | "className" | "slot" | "style"> {
+interface TableHeaderProps<T extends object> extends AriaTableHeaderProps<T> {
     bordered?: boolean;
 }
 
@@ -162,7 +160,7 @@ const TableHeader = <T extends object>({ columns, children, bordered = true, cla
 
 TableHeader.displayName = "TableHeader";
 
-interface TableHeadProps extends AriaColumnProps, Omit<ThHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
+interface TableHeadProps extends AriaColumnProps {
     label?: string;
     tooltip?: string;
 }
@@ -210,9 +208,7 @@ const TableHead = ({ className, tooltip, label, children, ...props }: TableHeadP
 };
 TableHead.displayName = "TableHead";
 
-interface TableRowProps<T extends object>
-    extends AriaRowProps<T>,
-        Omit<ComponentPropsWithRef<"tr">, "children" | "className" | "onClick" | "slot" | "style" | "id"> {
+interface TableRowProps<T extends object> extends AriaRowProps<T> {
     highlightSelectedRow?: boolean;
 }
 
@@ -250,9 +246,7 @@ const TableRow = <T extends object>({ columns, children, className, highlightSel
 
 TableRow.displayName = "TableRow";
 
-interface TableCellProps extends AriaCellProps, Omit<TdHTMLAttributes<HTMLTableCellElement>, "children" | "className" | "style" | "id"> {
-    ref?: Ref<HTMLTableCellElement>;
-}
+interface TableCellProps extends AriaCellProps {}
 
 const TableCell = ({ className, children, ...props }: TableCellProps) => {
     const { size } = useContext(TableContext);

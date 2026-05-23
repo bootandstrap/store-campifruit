@@ -8,14 +8,30 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createSmartRateLimiter } from '@/lib/security/rate-limit-factory'
+import { getClientIp } from '@/lib/security/get-client-ip'
 import { logger } from '@/lib/logger'
 
 const BSWEB_URL = process.env.BSWEB_INTERNAL_URL
     || process.env.NEXT_PUBLIC_BSWEB_URL
     || 'https://bootandstrap.com'
 
+const billingPortalLimiter = createSmartRateLimiter({
+    limit: 10,
+    windowMs: 60_000,
+    name: 'billing-portal',
+})
+
 export async function POST(req: NextRequest) {
     try {
+        const clientIp = getClientIp(req)
+        if (await billingPortalLimiter.isLimited(clientIp)) {
+            return NextResponse.json(
+                { error: 'Too many requests. Please wait a moment.' },
+                { status: 429 }
+            )
+        }
+
         // Auth check
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()

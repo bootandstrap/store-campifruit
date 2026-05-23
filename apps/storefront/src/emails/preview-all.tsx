@@ -101,7 +101,7 @@ async function main() {
                         storeName: 'CampiFruit',
                         storeUrl: 'https://campifruit.com',
                         brandColor: '#2D5016',
-                    } as any)
+                    } as any) as Parameters<typeof render>[0]
                 )
                 fs.writeFileSync(path.join(outDir, fileName), html)
                 indexHtml += `  <div class="card"><a href="${fileName}" target="_blank">

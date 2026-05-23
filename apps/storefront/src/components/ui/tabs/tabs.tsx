@@ -168,7 +168,7 @@ interface TabComponentProps extends AriaTabProps {
     /** The label of the tab. */
     label?: ReactNode;
     /** The children of the tab. */
-    children?: ReactNode | ((props: AriaTabRenderProps) => ReactNode);
+    children?: AriaTabProps["children"];
     /** The badge displayed next to the label. */
     badge?: number | string;
 }

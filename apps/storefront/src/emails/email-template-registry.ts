@@ -13,52 +13,8 @@
  * Zone: 🟡 EXTEND — add templates freely
  */
 
-import type { ComponentType } from 'react'
-import type { EmailTemplate, LayoutComponent } from './types'
-
-// ---------------------------------------------------------------------------
-// Lazy imports to avoid bundling all templates when only one is needed
-// ---------------------------------------------------------------------------
-
-const templateLoaders: Record<EmailTemplate, () => Promise<{ default: ComponentType<any> }>> = {
-    order_confirmation: () => import('@/emails/OrderConfirmation'),
-    order_shipped: () => import('@/emails/OrderShipped'),
-    order_delivered: () => import('@/emails/OrderDelivered'),
-    order_cancelled: () => import('@/emails/OrderCancelled'),
-    payment_failed: () => import('@/emails/PaymentFailed'),
-    refund_processed: () => import('@/emails/RefundProcessed'),
-    low_stock_alert: () => import('@/emails/LowStockAlert'),
-    welcome: () => import('@/emails/Welcome'),
-    password_reset: () => import('@/emails/PasswordReset'),
-    account_verification: () => import('@/emails/AccountVerification'),
-    review_request: () => import('@/emails/ReviewRequest'),
-    abandoned_cart: () => import('@/emails/AbandonedCart'),
-    pos_receipt: () => import('@/emails/POSReceipt'),
-}
-
-// ---------------------------------------------------------------------------
-// Layout loaders — lazy load to avoid bundling all layouts
-// ---------------------------------------------------------------------------
-
-const layoutLoaders: Record<string, () => Promise<{ default: LayoutComponent }>> = {
-    minimal: () => import('@/emails/layouts/MinimalLayout'),
-    brand: () => import('@/emails/layouts/BrandLayout'),
-    modern: () => import('@/emails/layouts/ModernLayout'),
-}
-
-/**
- * Load a layout component by design slug.
- * Falls back to MinimalLayout if the slug is unknown.
- */
-export async function loadEmailLayout(slug: string): Promise<LayoutComponent> {
-    const loader = layoutLoaders[slug]
-    if (!loader) {
-        const fallback = await layoutLoaders.minimal()
-        return fallback.default
-    }
-    const mod = await loader()
-    return mod.default
-}
+import type { EmailTemplate } from './types'
+export { loadEmailLayout, loadEmailTemplate } from './email-template-loaders'
 
 // ---------------------------------------------------------------------------
 // Default subjects per locale
@@ -211,25 +167,6 @@ export const EMAIL_DESIGNS: EmailDesign[] = [
 
 export function getDesignBySlug(slug: string): EmailDesign {
     return EMAIL_DESIGNS.find(d => d.slug === slug) || EMAIL_DESIGNS[0]
-}
-
-// ---------------------------------------------------------------------------
-// Template loader
-// ---------------------------------------------------------------------------
-
-/**
- * Load a template component by name.
- * Returns the React component that accepts email-specific props.
- */
-export async function loadEmailTemplate(
-    template: EmailTemplate,
-): Promise<ComponentType<any>> {
-    const loader = templateLoaders[template]
-    if (!loader) {
-        throw new Error(`Unknown email template: ${template}`)
-    }
-    const mod = await loader()
-    return mod.default
 }
 
 /**

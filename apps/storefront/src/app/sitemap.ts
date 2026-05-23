@@ -2,10 +2,11 @@ import type { MetadataRoute } from 'next'
 import { getProducts } from '@/lib/medusa/client'
 import { getConfig, getRequiredTenantId } from '@/lib/config'
 import { getActiveLocales, CANONICAL_ROUTES } from '@/lib/i18n'
+import { appendPath, getCanonicalSiteUrl } from '@/lib/seo/site-url'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+    const baseUrl = await getCanonicalSiteUrl()
     const { config } = await getConfig()
     const activeLocales = getActiveLocales(config)
 
@@ -16,16 +17,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (activeLocales.length <= 1) return undefined
         const languages: Record<string, string> = {}
         for (const locale of activeLocales) {
-            languages[locale] = `${baseUrl}/${locale}${path}`
+            languages[locale] = appendPath(baseUrl, `/${locale}${path}`)
         }
         // x-default points to the tenant's configured default language
-        languages['x-default'] = `${baseUrl}/${config.language || 'en'}${path}`
+        languages['x-default'] = appendPath(baseUrl, `/${config.language || 'en'}${path}`)
         return { languages }
     }
 
     // Static pages per locale
     for (const locale of activeLocales) {
-        const prefix = `${baseUrl}/${locale}`
+        const prefix = appendPath(baseUrl, `/${locale}`)
 
         // Homepage
         entries.push({
@@ -67,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         while (hasMore) {
             const { products } = await getProducts({ limit: PAGE_SIZE, offset })
             for (const locale of activeLocales) {
-                const prefix = `${baseUrl}/${locale}`
+                const prefix = appendPath(baseUrl, `/${locale}`)
                 for (const product of products) {
                     const productPath = `/${CANONICAL_ROUTES.products}/${product.handle}`
                     entries.push({
@@ -99,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const cmsPages = (data || []) as Array<{ slug: string; updated_at: string | null }>
 
         for (const locale of activeLocales) {
-            const prefix = `${baseUrl}/${locale}`
+            const prefix = appendPath(baseUrl, `/${locale}`)
             for (const page of cmsPages || []) {
                 const pagePath = `/paginas/${page.slug}`
                 entries.push({

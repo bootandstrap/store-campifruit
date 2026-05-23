@@ -1,9 +1,111 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, type ReactNode } from 'react'
 import { Lock, Eye, EyeOff, Check, AlertCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useI18n } from '@/lib/i18n/provider'
+
+function getPasswordStrength(password: string): number {
+    if (!password) return 0
+    let score = 0
+    if (password.length >= 8) score++
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++
+    if (/\d/.test(password)) score++
+    if (/[^a-zA-Z0-9]/.test(password)) score++
+    return score
+}
+
+function PasswordField({
+    label,
+    value,
+    onChange,
+    show,
+    onToggle,
+    autoComplete,
+    minLength,
+}: {
+    label: string
+    value: string
+    onChange: (value: string) => void
+    show: boolean
+    onToggle: () => void
+    autoComplete: string
+    minLength?: number
+}) {
+    return (
+        <div>
+            <label className="text-xs text-tx-muted font-medium mb-1.5 block">
+                {label}
+            </label>
+            <div className="relative">
+                <input
+                    type={show ? 'text' : 'password'}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-sf-3 bg-sf-0 focus:outline-none focus:ring-1 focus:ring-brand pr-10"
+                    autoComplete={autoComplete}
+                    minLength={minLength}
+                />
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-tx-muted hover:text-tx transition-colors"
+                >
+                    {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+            </div>
+        </div>
+    )
+}
+
+function PasswordStrengthMeter({
+    password,
+    strength,
+    strengthColor,
+    strengthLabel,
+}: {
+    password: string
+    strength: number
+    strengthColor: string
+    strengthLabel: string
+}) {
+    if (!password) return null
+
+    return (
+        <div className="mt-2 space-y-1">
+            <div className="flex gap-1">
+                {[1, 2, 3, 4].map(i => (
+                    <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${i <= strength ? strengthColor : 'bg-sf-3'}`}
+                    />
+                ))}
+            </div>
+            <p className="text-xs text-tx-muted">{strengthLabel}</p>
+        </div>
+    )
+}
+
+function StatusAlert({
+    tone,
+    icon,
+    message,
+}: {
+    tone: 'error' | 'success'
+    icon: ReactNode
+    message: string
+}) {
+    const styles = tone === 'error'
+        ? 'text-red-400 bg-red-500/10'
+        : 'text-green-500 bg-green-500/10'
+
+    return (
+        <div className={`flex items-center gap-2 text-xs p-3 rounded-xl ${styles}`}>
+            {icon}
+            {message}
+        </div>
+    )
+}
 
 export default function ChangePasswordForm() {
     const { t } = useI18n()
@@ -16,21 +118,12 @@ export default function ChangePasswordForm() {
     const [success, setSuccess] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Password strength
-    const strength = (() => {
-        if (!newPassword) return 0
-        let s = 0
-        if (newPassword.length >= 8) s++
-        if (/[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword)) s++
-        if (/\d/.test(newPassword)) s++
-        if (/[^a-zA-Z0-9]/.test(newPassword)) s++
-        return s
-    })()
-
+    const strength = getPasswordStrength(newPassword)
     const strengthLabel = ['', t('password.weak') || 'Weak', t('password.fair') || 'Fair', t('password.good') || 'Good', t('password.strong') || 'Strong'][strength] || ''
     const strengthColor = ['bg-sf-3', 'bg-red-500', 'bg-amber-500', 'bg-blue-500', 'bg-green-500'][strength]
 
     const isValid = newPassword.length >= 8 && newPassword === confirmPassword && currentPassword.length > 0
+    const confirmPasswordMismatch = Boolean(confirmPassword && confirmPassword !== newPassword)
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault()
@@ -86,66 +179,31 @@ export default function ChangePasswordForm() {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Current password */}
-                <div>
-                    <label className="text-xs text-tx-muted font-medium mb-1.5 block">
-                        {t('password.current') || 'Current Password'}
-                    </label>
-                    <div className="relative">
-                        <input
-                            type={showCurrent ? 'text' : 'password'}
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="w-full px-3 py-2.5 text-sm rounded-xl border border-sf-3 bg-sf-0 focus:outline-none focus:ring-1 focus:ring-brand pr-10"
-                            autoComplete="current-password"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowCurrent(!showCurrent)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-tx-muted hover:text-tx transition-colors"
-                        >
-                            {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                    </div>
-                </div>
+                <PasswordField
+                    label={t('password.current') || 'Current Password'}
+                    value={currentPassword}
+                    onChange={setCurrentPassword}
+                    show={showCurrent}
+                    onToggle={() => setShowCurrent(!showCurrent)}
+                    autoComplete="current-password"
+                />
 
-                {/* New password */}
                 <div>
-                    <label className="text-xs text-tx-muted font-medium mb-1.5 block">
-                        {t('password.new') || 'New Password'}
-                    </label>
-                    <div className="relative">
-                        <input
-                            type={showNew ? 'text' : 'password'}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full px-3 py-2.5 text-sm rounded-xl border border-sf-3 bg-sf-0 focus:outline-none focus:ring-1 focus:ring-brand pr-10"
-                            autoComplete="new-password"
-                            minLength={8}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowNew(!showNew)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-tx-muted hover:text-tx transition-colors"
-                        >
-                            {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                    </div>
-
-                    {/* Strength indicator */}
-                    {newPassword && (
-                        <div className="mt-2 space-y-1">
-                            <div className="flex gap-1">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div
-                                        key={i}
-                                        className={`h-1 flex-1 rounded-full transition-colors ${i <= strength ? strengthColor : 'bg-sf-3'}`}
-                                    />
-                                ))}
-                            </div>
-                            <p className="text-xs text-tx-muted">{strengthLabel}</p>
-                        </div>
-                    )}
+                    <PasswordField
+                        label={t('password.new') || 'New Password'}
+                        value={newPassword}
+                        onChange={setNewPassword}
+                        show={showNew}
+                        onToggle={() => setShowNew(!showNew)}
+                        autoComplete="new-password"
+                        minLength={8}
+                    />
+                    <PasswordStrengthMeter
+                        password={newPassword}
+                        strength={strength}
+                        strengthColor={strengthColor}
+                        strengthLabel={strengthLabel}
+                    />
                 </div>
 
                 {/* Confirm password */}
@@ -158,13 +216,13 @@ export default function ChangePasswordForm() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className={`w-full px-3 py-2.5 text-sm rounded-xl border bg-sf-0 focus:outline-none focus:ring-1 focus:ring-brand ${
-                            confirmPassword && confirmPassword !== newPassword
+                            confirmPasswordMismatch
                                 ? 'border-red-500'
                                 : 'border-sf-3'
                         }`}
                         autoComplete="new-password"
                     />
-                    {confirmPassword && confirmPassword !== newPassword && (
+                    {confirmPasswordMismatch && (
                         <p className="text-xs text-red-400 mt-1">
                             {t('password.mismatch') || 'Passwords do not match'}
                         </p>
@@ -173,17 +231,19 @@ export default function ChangePasswordForm() {
 
                 {/* Error / Success */}
                 {error && (
-                    <div className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 p-3 rounded-xl">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        {error}
-                    </div>
+                    <StatusAlert
+                        tone="error"
+                        icon={<AlertCircle className="w-4 h-4 shrink-0" />}
+                        message={error}
+                    />
                 )}
 
                 {success && (
-                    <div className="flex items-center gap-2 text-xs text-green-500 bg-green-500/10 p-3 rounded-xl">
-                        <Check className="w-4 h-4 shrink-0" />
-                        {t('password.success') || 'Password changed successfully!'}
-                    </div>
+                    <StatusAlert
+                        tone="success"
+                        icon={<Check className="w-4 h-4 shrink-0" />}
+                        message={t('password.success') || 'Password changed successfully!'}
+                    />
                 )}
 
                 {/* Submit */}

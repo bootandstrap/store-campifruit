@@ -38,6 +38,7 @@ const DEFAULT_LABELS: PanelSidebarLabels = {
     modules: 'Módulos',
     settings: 'Ajustes',
     pos: 'POS',
+    health: 'Salud',
     ownerPanel: 'Panel',
     backToStore: 'Volver a la tienda',
 }

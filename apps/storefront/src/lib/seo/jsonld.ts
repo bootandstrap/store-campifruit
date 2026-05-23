@@ -1,5 +1,6 @@
 import type { StoreConfig } from '@/lib/config'
 import type { MedusaProduct } from '@/lib/medusa/client'
+import { appendPath } from './site-url'
 
 // schema-dts imported for reference — we use Record<string, unknown> return types
 // because schema-dts strict types conflict with JSON.stringify spread patterns.
@@ -41,6 +42,7 @@ function getAvailability(product: MedusaProduct): string {
 export function productJsonLD(
     product: MedusaProduct,
     config: StoreConfig,
+    siteUrl: string,
     reviewStats?: { ratingValue: number; reviewCount: number } | null
 ): Record<string, unknown> {
     const price = product.variants?.[0]?.prices?.[0]
@@ -71,7 +73,7 @@ export function productJsonLD(
                 price: (price.amount / 100).toFixed(2),
                 priceCurrency: price.currency_code.toUpperCase(),
                 availability: getAvailability(product),
-                url: `${process.env.NEXT_PUBLIC_SITE_URL || ''}/productos/${product.handle}`,
+                url: appendPath(siteUrl, `/productos/${product.handle}`),
                 seller: {
                     '@type': 'Organization',
                     name: config.business_name,
@@ -85,7 +87,7 @@ export function productJsonLD(
  * Organization JSON-LD for homepage
  * Schema: https://schema.org/Organization
  */
-export function organizationJsonLD(config: StoreConfig): Record<string, unknown> {
+export function organizationJsonLD(config: StoreConfig, siteUrl: string): Record<string, unknown> {
     // Collect social profile URLs for Google Knowledge Panel sameAs
     const sameAs = [
         config.social_instagram,
@@ -97,7 +99,7 @@ export function organizationJsonLD(config: StoreConfig): Record<string, unknown>
         '@context': 'https://schema.org',
         '@type': 'Organization',
         name: config.business_name,
-        url: process.env.NEXT_PUBLIC_SITE_URL || '',
+        url: siteUrl,
         logo: config.logo_url || undefined,
         ...(sameAs.length > 0 && { sameAs }),
         contactPoint: config.whatsapp_number
@@ -119,8 +121,8 @@ export function breadcrumbListJsonLD(
     product: MedusaProduct,
     categoryName: string | null,
     lang: string,
+    siteUrl: string,
 ): Record<string, unknown> {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
     const items: Array<Record<string, unknown>> = [
         {
             '@type': 'ListItem',
@@ -163,9 +165,7 @@ export function breadcrumbListJsonLD(
  * WebSite JSON-LD for homepage — enables Google Sitelinks Search Box
  * Schema: https://schema.org/WebSite
  */
-export function websiteJsonLD(config: StoreConfig): Record<string, unknown> {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
-
+export function websiteJsonLD(config: StoreConfig, siteUrl: string): Record<string, unknown> {
     return {
         '@context': 'https://schema.org',
         '@type': 'WebSite',

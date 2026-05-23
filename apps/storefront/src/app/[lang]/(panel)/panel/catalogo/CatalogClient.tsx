@@ -39,10 +39,12 @@ import { isZeroDecimal } from '@/lib/i18n/currencies'
 import type { LimitCheckResult } from '@/lib/limits'
 
 // ── Extracted sub-components ──
-import ProductsTab from './ProductsTab'
-import CategoriesTab from './CategoriesTab'
-import ProductFormSlideOverInline from './ProductFormSlideOverInline'
-import CategoryFormSlideOver from './CategoryFormSlideOver'
+import {
+    ProductsTab,
+    CategoriesTab,
+    ProductFormSlideOverInline,
+    CategoryFormSlideOver,
+} from './catalog-subcomponents'
 
 // ---------------------------------------------------------------------------
 // Types

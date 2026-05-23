@@ -95,16 +95,16 @@ describe('Provisioning Schema Completeness', () => {
             allMigrationSQL += fs.readFileSync(path.join(migrationsDir, file), 'utf-8') + '\n'
         }
 
-        // Extract column names from CREATE TABLE feature_flags and ALTER TABLE feature_flags
+        // Extract column names from CREATE TABLE public.feature_flags and ALTER TABLE public.feature_flags
         const createTableMatch = allMigrationSQL.match(
-            /CREATE TABLE[^(]*feature_flags\s*\(([^;]+)\);/
+            /CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+public\.feature_flags\s*\(([\s\S]*?)\);/i
         )
         const createColumns = createTableMatch
             ? [...createTableMatch[1].matchAll(/^\s*(enable_\w+|require_\w+|owner_\w+)/gm)].map((m: RegExpMatchArray) => m[1])
             : []
 
         const alterColumns = [...allMigrationSQL.matchAll(
-            /ALTER TABLE\s+feature_flags\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?(enable_\w+|require_\w+|owner_\w+)/gi
+            /ALTER TABLE\s+(?:public\.)?feature_flags\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?(enable_\w+|require_\w+|owner_\w+)/gi
         )].map((m: RegExpMatchArray) => m[1])
 
         const allDBFlagColumns = new Set([...createColumns, ...alterColumns])
@@ -116,14 +116,14 @@ describe('Provisioning Schema Completeness', () => {
 
         // Same for limits
         const createLimitsMatch = allMigrationSQL.match(
-            /CREATE TABLE[^(]*plan_limits\s*\(([^;]+)\);/
+            /CREATE TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+public\.plan_limits\s*\(([\s\S]*?)\);/i
         )
         const createLimitCols = createLimitsMatch
-            ? [...createLimitsMatch[1].matchAll(/^\s*(max_\w+|storage_\w+)/gm)].map((m: RegExpMatchArray) => m[1])
+            ? [...createLimitsMatch[1].matchAll(/^\s*(max_\w+|storage_\w+|backup_frequency_hours)/gm)].map((m: RegExpMatchArray) => m[1])
             : []
 
         const alterLimitCols = [...allMigrationSQL.matchAll(
-            /ALTER TABLE\s+plan_limits\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?(max_\w+|storage_\w+)/gi
+            /ALTER TABLE\s+(?:public\.)?plan_limits\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?(max_\w+|storage_\w+|backup_frequency_hours)/gi
         )].map((m: RegExpMatchArray) => m[1])
 
         const allDBLimitColumns = new Set([...createLimitCols, ...alterLimitCols])

@@ -2,6 +2,24 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { CRM_MODULE } from "../../../../modules/crm"
 import type CrmModuleService from "../../../../modules/crm/service"
 
+type CrmInteractionType = "order" | "email" | "call" | "note" | "support" | "visit" | "other"
+
+const CRM_INTERACTION_TYPES = new Set<CrmInteractionType>([
+    "order",
+    "email",
+    "call",
+    "note",
+    "support",
+    "visit",
+    "other",
+])
+
+function normalizeInteractionType(value: string): CrmInteractionType {
+    return CRM_INTERACTION_TYPES.has(value as CrmInteractionType)
+        ? (value as CrmInteractionType)
+        : "note"
+}
+
 /**
  * GET /admin/crm/interactions
  * List interactions, optionally filtered by contact_id
@@ -40,11 +58,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     }
 
     const service = req.scope.resolve(CRM_MODULE) as CrmModuleService
+    const interactionType = normalizeInteractionType(body.type)
 
     const interaction = await service.createCrmInteractions({
         contact_id: body.contact_id,
-        type: body.type,
-        summary: body.subject ?? body.type,
+        type: interactionType,
+        summary: body.subject ?? interactionType,
         content: body.notes ?? null,
         initiated_by: "operator" as const,
     })

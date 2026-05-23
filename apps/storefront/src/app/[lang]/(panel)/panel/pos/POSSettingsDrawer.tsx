@@ -8,7 +8,7 @@
  * Uses the same governance pipeline (saveOnboardingConfigAction).
  */
 
-import { useState, useCallback, useTransition } from 'react'
+import { useState, useCallback, useTransition, type ReactNode } from 'react'
 import { X, Settings, Save, Loader2, Check, Receipt, Volume2, Timer, BarChart3, Wifi, Lock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { saveOnboardingConfigAction } from '@/app/[lang]/(panel)/panel/actions'
@@ -36,6 +36,139 @@ interface Props {
         enable_kiosk_analytics: boolean
         enable_kiosk_remote_management: boolean
     }
+}
+
+function POSSettingsField({
+    field,
+    value,
+    onChange,
+}: {
+    field: ConfigFieldDefWithGroup & { icon?: typeof Receipt }
+    value: unknown
+    onChange: (value: unknown) => void
+}) {
+    const inputId = `pos-cfg-${field.key}`
+
+    if (field.type === 'text') {
+        return (
+            <>
+                <label htmlFor={inputId} className="block text-xs font-semibold text-tx-muted mb-1.5">
+                    {field.label}
+                </label>
+                <input
+                    id={inputId}
+                    type="text"
+                    value={String(value ?? '')}
+                    onChange={e => onChange(e.target.value)}
+                    placeholder={field.placeholder}
+                    className="w-full px-4 py-2.5 min-h-[44px] rounded-xl glass text-tx text-sm focus:ring-2 focus:ring-soft transition-all outline-none"
+                />
+            </>
+        )
+    }
+
+    if (field.type === 'textarea') {
+        return (
+            <>
+                <label htmlFor={inputId} className="block text-xs font-semibold text-tx-muted mb-1.5">
+                    {field.label}
+                </label>
+                <textarea
+                    id={inputId}
+                    value={String(value ?? '')}
+                    onChange={e => onChange(e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={3}
+                    className="w-full px-4 py-3 min-h-[80px] rounded-xl glass text-tx text-sm focus:ring-2 focus:ring-soft transition-all outline-none resize-none"
+                />
+            </>
+        )
+    }
+
+    if (field.type === 'select' && field.options) {
+        return (
+            <>
+                <label htmlFor={inputId} className="block text-xs font-semibold text-tx-muted mb-1.5">
+                    {field.label}
+                </label>
+                <select
+                    id={inputId}
+                    value={String(value ?? '')}
+                    onChange={e => onChange(e.target.value)}
+                    className="w-full px-4 py-2.5 min-h-[44px] rounded-xl glass text-tx text-sm focus:ring-2 focus:ring-soft transition-all outline-none appearance-none cursor-pointer"
+                >
+                    {field.options.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            </>
+        )
+    }
+
+    return (
+        <div className="flex items-center justify-between">
+            <label htmlFor={inputId} className="text-sm font-medium text-tx cursor-pointer">
+                {field.label}
+            </label>
+            <button
+                id={inputId}
+                role="switch"
+                aria-checked={Boolean(value)}
+                onClick={() => onChange(!value)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                    value ? 'bg-brand' : 'bg-sf-3'
+                }`}
+            >
+                <motion.div
+                    className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                    animate={{ x: value ? 24 : 4 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+            </button>
+        </div>
+    )
+}
+
+function KioskFeatureCard({
+    icon: Icon,
+    title,
+    enabled,
+    activeLabel,
+    lockedLabel,
+    description,
+    children,
+}: {
+    icon: typeof Timer
+    title: string
+    enabled: boolean
+    activeLabel?: string
+    lockedLabel: string
+    description: string
+    children?: ReactNode
+}) {
+    return (
+        <div className={`rounded-xl border p-4 transition-all ${
+            enabled ? 'border-sf-3 bg-sf-0' : 'border-sf-3 bg-sf-0 opacity-50'
+        }`}>
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4 text-brand" />
+                    <span className="text-sm font-medium text-tx">{title}</span>
+                </div>
+                {enabled ? (
+                    activeLabel ? <span className="text-xs text-emerald-500 font-medium">{activeLabel}</span> : null
+                ) : (
+                    <span className="flex items-center gap-1 text-xs text-tx-muted">
+                        <Lock className="w-3 h-3" /> {lockedLabel}
+                    </span>
+                )}
+            </div>
+            <p className="text-xs text-tx-muted mb-2">{description}</p>
+            {children}
+        </div>
+    )
 }
 
 // ── Component ─────────────────────────────────────────────────────
@@ -140,81 +273,11 @@ export default function POSSettingsDrawer({ isOpen, onClose, initialValues, labe
                                         <div className="space-y-3">
                                             {groupFields.map(field => (
                                                 <div key={field.key}>
-                                                    {field.type !== 'toggle' && (
-                                                        <label
-                                                            htmlFor={`pos-cfg-${field.key}`}
-                                                            className="block text-xs font-semibold text-tx-muted mb-1.5"
-                                                        >
-                                                            {field.label}
-                                                        </label>
-                                                    )}
-
-                                                    {/* Text */}
-                                                    {field.type === 'text' && (
-                                                        <input
-                                                            id={`pos-cfg-${field.key}`}
-                                                            type="text"
-                                                            value={String(values[field.key] ?? '')}
-                                                            onChange={e => updateValue(field.key, e.target.value)}
-                                                            placeholder={field.placeholder}
-                                                            className="w-full px-4 py-2.5 min-h-[44px] rounded-xl glass text-tx text-sm focus:ring-2 focus:ring-soft transition-all outline-none"
-                                                        />
-                                                    )}
-
-                                                    {/* Textarea */}
-                                                    {field.type === 'textarea' && (
-                                                        <textarea
-                                                            id={`pos-cfg-${field.key}`}
-                                                            value={String(values[field.key] ?? '')}
-                                                            onChange={e => updateValue(field.key, e.target.value)}
-                                                            placeholder={field.placeholder}
-                                                            rows={3}
-                                                            className="w-full px-4 py-3 min-h-[80px] rounded-xl glass text-tx text-sm focus:ring-2 focus:ring-soft transition-all outline-none resize-none"
-                                                        />
-                                                    )}
-
-                                                    {/* Select */}
-                                                    {field.type === 'select' && field.options && (
-                                                        <select
-                                                            id={`pos-cfg-${field.key}`}
-                                                            value={String(values[field.key] ?? '')}
-                                                            onChange={e => updateValue(field.key, e.target.value)}
-                                                            className="w-full px-4 py-2.5 min-h-[44px] rounded-xl glass text-tx text-sm focus:ring-2 focus:ring-soft transition-all outline-none appearance-none cursor-pointer"
-                                                        >
-                                                            {field.options.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>
-                                                                    {opt.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    )}
-
-                                                    {/* Toggle */}
-                                                    {field.type === 'toggle' && (
-                                                        <div className="flex items-center justify-between">
-                                                            <label
-                                                                htmlFor={`pos-cfg-${field.key}`}
-                                                                className="text-sm font-medium text-tx cursor-pointer"
-                                                            >
-                                                                {field.label}
-                                                            </label>
-                                                            <button
-                                                                id={`pos-cfg-${field.key}`}
-                                                                role="switch"
-                                                                aria-checked={Boolean(values[field.key])}
-                                                                onClick={() => updateValue(field.key, !values[field.key])}
-                                                                className={`relative w-11 h-6 rounded-full transition-colors ${
-                                                                    values[field.key] ? 'bg-brand' : 'bg-sf-3'
-                                                                }`}
-                                                            >
-                                                                <motion.div
-                                                                    className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
-                                                                    animate={{ x: values[field.key] ? 24 : 4 }}
-                                                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                                                />
-                                                            </button>
-                                                        </div>
-                                                    )}
+                                                    <POSSettingsField
+                                                        field={field}
+                                                        value={values[field.key]}
+                                                        onChange={(value) => updateValue(field.key, value)}
+                                                    />
                                                 </div>
                                             ))}
                                         </div>
@@ -230,25 +293,13 @@ export default function POSSettingsDrawer({ isOpen, onClose, initialValues, labe
                                     </h3>
                                     <div className="space-y-3">
                                         {/* Idle Timer */}
-                                        <div className={`rounded-xl border p-4 transition-all ${
-                                            kioskFlags!.enable_kiosk_idle_timer
-                                                ? 'border-sf-3 bg-sf-0'
-                                                : 'border-sf-3 bg-sf-0 opacity-50'
-                                        }`}>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Timer className="w-4 h-4 text-brand" />
-                                                    <span className="text-sm font-medium text-tx">Temporizador inactividad</span>
-                                                </div>
-                                                {!kioskFlags!.enable_kiosk_idle_timer && (
-                                                    <span className="flex items-center gap-1 text-xs text-tx-muted">
-                                                        <Lock className="w-3 h-3" /> Pro
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-tx-muted mb-2">
-                                                Tiempo antes de mostrar pantalla de atracción
-                                            </p>
+                                        <KioskFeatureCard
+                                            icon={Timer}
+                                            title="Temporizador inactividad"
+                                            enabled={kioskFlags!.enable_kiosk_idle_timer}
+                                            lockedLabel="Pro"
+                                            description="Tiempo antes de mostrar pantalla de atracción"
+                                        >
                                             {kioskFlags!.enable_kiosk_idle_timer ? (
                                                 <div className="flex gap-2">
                                                     {[30, 60, 120, 300].map(sec => (
@@ -266,61 +317,35 @@ export default function POSSettingsDrawer({ isOpen, onClose, initialValues, labe
                                                     ))}
                                                 </div>
                                             ) : null}
-                                        </div>
+                                        </KioskFeatureCard>
 
                                         {/* Kiosk Analytics */}
-                                        <div className={`rounded-xl border p-4 transition-all ${
-                                            kioskFlags!.enable_kiosk_analytics
-                                                ? 'border-sf-3 bg-sf-0'
-                                                : 'border-sf-3 bg-sf-0 opacity-50'
-                                        }`}>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <BarChart3 className="w-4 h-4 text-emerald-500" />
-                                                    <span className="text-sm font-medium text-tx">Analíticas de kiosco</span>
-                                                </div>
-                                                {kioskFlags!.enable_kiosk_analytics ? (
-                                                    <span className="text-xs text-emerald-500 font-medium">Activo</span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1 text-xs text-tx-muted">
-                                                        <Lock className="w-3 h-3" /> Enterprise
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-tx-muted mt-1">
-                                                {kioskFlags!.enable_kiosk_analytics
+                                        <KioskFeatureCard
+                                            icon={BarChart3}
+                                            title="Analíticas de kiosco"
+                                            enabled={kioskFlags!.enable_kiosk_analytics}
+                                            activeLabel="Activo"
+                                            lockedLabel="Enterprise"
+                                            description={
+                                                kioskFlags!.enable_kiosk_analytics
                                                     ? 'Sesiones, duración media, productos más vistos en kiosco'
                                                     : 'Métricas de uso del kiosco disponibles en Enterprise'
-                                                }
-                                            </p>
-                                        </div>
+                                            }
+                                        />
 
                                         {/* Remote Management */}
-                                        <div className={`rounded-xl border p-4 transition-all ${
-                                            kioskFlags!.enable_kiosk_remote_management
-                                                ? 'border-sf-3 bg-sf-0'
-                                                : 'border-sf-3 bg-sf-0 opacity-50'
-                                        }`}>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Wifi className="w-4 h-4 text-blue-500" />
-                                                    <span className="text-sm font-medium text-tx">Gestión remota</span>
-                                                </div>
-                                                {kioskFlags!.enable_kiosk_remote_management ? (
-                                                    <span className="text-xs text-blue-500 font-medium">Activo</span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1 text-xs text-tx-muted">
-                                                        <Lock className="w-3 h-3" /> Enterprise
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-tx-muted mt-1">
-                                                {kioskFlags!.enable_kiosk_remote_management
+                                        <KioskFeatureCard
+                                            icon={Wifi}
+                                            title="Gestión remota"
+                                            enabled={kioskFlags!.enable_kiosk_remote_management}
+                                            activeLabel="Activo"
+                                            lockedLabel="Enterprise"
+                                            description={
+                                                kioskFlags!.enable_kiosk_remote_management
                                                     ? 'Controla dispositivos kiosco remotamente, reinicia sesiones y actualiza menú'
                                                     : 'Control remoto de dispositivos kiosco disponible en Enterprise'
-                                                }
-                                            </p>
-                                        </div>
+                                            }
+                                        />
                                     </div>
                                 </div>
                             )}

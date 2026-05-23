@@ -1,10 +1,10 @@
 "use client";
 
-import type { FocusEventHandler, PointerEventHandler, RefAttributes, RefObject } from "react";
-import { useCallback, useContext, useRef, useState } from "react";
+import type { FocusEventHandler, PointerEventHandler, RefObject } from "react";
+import { useCallback, useRef, useState } from "react";
 import { SearchLg as SearchIcon } from "@untitledui/icons";
 import type { ComboBoxProps as AriaComboBoxProps, GroupProps as AriaGroupProps, ListBoxProps as AriaListBoxProps } from "react-aria-components";
-import { ComboBox as AriaComboBox, Group as AriaGroup, Input as AriaInput, ListBox as AriaListBox, ComboBoxStateContext } from "react-aria-components";
+import { ComboBox as AriaComboBox, Group as AriaGroup, Input as AriaInput, ListBox as AriaListBox } from "react-aria-components";
 import { HintText } from "@/components/ui/input/hint-text";
 import { Label } from "@/components/ui/input/label";
 import { Popover } from "@/components/ui/select/popover";
@@ -12,7 +12,7 @@ import { type CommonProps, SelectContext, type SelectItemType, sizes } from "@/c
 import { useResizeObserver } from "@/hooks/use-resize-observer";
 import { cx } from "@/lib/utils/cn";
 
-interface ComboBoxProps extends Omit<AriaComboBoxProps<SelectItemType>, "children" | "items">, RefAttributes<HTMLDivElement>, CommonProps {
+interface ComboBoxProps extends Omit<AriaComboBoxProps<SelectItemType>, "children" | "items">, CommonProps {
     shortcut?: boolean;
     items?: SelectItemType[];
     popoverClassName?: string;
@@ -27,21 +27,21 @@ interface ComboBoxValueProps extends AriaGroupProps {
     shortcutClassName?: string;
     onFocus?: FocusEventHandler;
     onPointerEnter?: PointerEventHandler;
-    ref?: RefObject<HTMLDivElement | null>;
+    groupRef?: RefObject<HTMLDivElement | null>;
 }
 
-const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, ...otherProps }: ComboBoxValueProps) => {
-    const state = useContext(ComboBoxStateContext);
-
-    const value = state?.selectedItem?.value || null;
-    const inputValue = state?.inputValue || null;
-
-    const first = inputValue?.split(value?.supportingText)?.[0] || "";
-    const last = inputValue?.split(first)[1];
-
+const ComboBoxValue = ({
+    size,
+    shortcut,
+    placeholder,
+    shortcutClassName,
+    groupRef,
+    ...otherProps
+}: ComboBoxValueProps) => {
     return (
         <AriaGroup
             {...otherProps}
+            ref={groupRef}
             className={({ isFocusWithin, isDisabled }) =>
                 cx(
                     "relative flex w-full items-center gap-2 rounded-lg bg-brand shadow-xs ring-1 ring-brand outline-hidden transition-shadow duration-100 ease-linear ring-inset",
@@ -56,16 +56,9 @@ const ComboBoxValue = ({ size, shortcut, placeholder, shortcutClassName, ...othe
                     <SearchIcon className="pointer-events-none size-5 shrink-0 text-fg-quaternary" />
 
                     <div className="relative flex w-full items-center gap-2">
-                        {inputValue && (
-                            <span className="absolute top-1/2 z-0 inline-flex w-full -translate-y-1/2 gap-2 truncate" aria-hidden="true">
-                                <p className={cx("text-md font-medium text-brand", isDisabled && "text-disabled")}>{first}</p>
-                                {last && <p className={cx("-ml-0.75 text-md text-tertiary", isDisabled && "text-disabled")}>{last}</p>}
-                            </span>
-                        )}
-
                         <AriaInput
                             placeholder={placeholder}
-                            className="z-10 w-full appearance-none bg-transparent text-md text-transparent caret-alpha-black/90 placeholder:text-placeholder focus:outline-hidden disabled:cursor-not-allowed disabled:text-disabled disabled:placeholder:text-disabled"
+                            className="z-10 w-full appearance-none bg-transparent text-md text-brand placeholder:text-placeholder focus:outline-hidden disabled:cursor-not-allowed disabled:text-disabled disabled:placeholder:text-disabled"
                         />
                     </div>
 
@@ -126,7 +119,7 @@ export const ComboBox = ({ placeholder = "Search", shortcut = true, size = "sm",
                         )}
 
                         <ComboBoxValue
-                            ref={placeholderRef}
+                            groupRef={placeholderRef}
                             placeholder={placeholder}
                             shortcut={shortcut}
                             shortcutClassName={shortcutClassName}

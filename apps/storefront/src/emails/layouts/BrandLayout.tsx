@@ -74,7 +74,7 @@ export default function BrandLayout({
 
                     {/* ━━ Content Card ━━ */}
                     <Section style={card}>
-                        {children}
+                        {children as Parameters<typeof Section>[0]['children']}
                     </Section>
 
                     {/* ━━ Branded Footer ━━ */}

@@ -19,7 +19,7 @@ const API_DIR = join(__dirname, '../../app/api')
 // ── Endpoints that MUST require authentication ──
 const AUTH_REQUIRED_ENDPOINTS = [
     'returns/route.ts',
-    'billing/portal/route.ts',
+    '../billing-portal/route.ts',
     'wishlist/route.ts',
     'panel/onboarding-complete/route.ts',
 ]
@@ -30,7 +30,7 @@ const AUTH_REQUIRED_ENDPOINTS = [
 // ── Endpoints that MUST have rate limiting ──
 const RATE_LIMITED_ENDPOINTS = [
     'returns/route.ts',
-    'billing/portal/route.ts',
+    '../billing-portal/route.ts',
     'chat/route.ts',
     'orders/lookup/route.ts',
     'analytics/route.ts',
@@ -147,7 +147,7 @@ describe('Production Contract: API Endpoint Security', () => {
 
     describe('billing portal authorization', () => {
         it('validates owner/super_admin role before creating portal session', () => {
-            const source = readRoute('billing/portal/route.ts')
+            const source = readRoute('../billing-portal/route.ts')
             if (!source) return
 
             // Must check role from profiles
@@ -156,13 +156,13 @@ describe('Production Contract: API Endpoint Security', () => {
             expect(source).toContain('403')
         })
 
-        it('uses admin client for tenant data access (RLS bypass)', () => {
-            const source = readRoute('billing/portal/route.ts')
+        it('uses the authenticated server client for tenant-scoped data access', () => {
+            const source = readRoute('../billing-portal/route.ts')
             if (!source) return
 
-            // Must import and use admin client for tenants query
-            expect(source).toContain("from '@/lib/supabase/admin'")
-            expect(source).toContain('createAdminClient')
+            expect(source).toContain("from '@/lib/supabase/server'")
+            expect(source).toContain('createClient')
+            expect(source).toContain(".from('tenants')")
         })
     })
 })

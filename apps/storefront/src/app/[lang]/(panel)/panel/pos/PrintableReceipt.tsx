@@ -66,6 +66,198 @@ function paymentMethodLabel(method: string, labels: Record<string, string>): str
     }
 }
 
+function ReceiptHeader({
+    business,
+    labels,
+    receiptHeader,
+}: {
+    business: BusinessInfo
+    labels: Record<string, string>
+    receiptHeader?: string
+}) {
+    return (
+        <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+            <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '2px' }}>
+                {receiptHeader || business.name}
+            </div>
+            {business.address && (
+                <div style={{ fontSize: '9px' }}>{business.address}</div>
+            )}
+            {(business.nif || business.phone) && (
+                <div style={{ fontSize: '9px' }}>
+                    {business.nif && `${posLabel('panel.pos.nif', labels)}: ${business.nif}`}
+                    {business.nif && business.phone && ' | '}
+                    {business.phone && `${posLabel('panel.pos.tel', labels)}: ${business.phone}`}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function ReceiptMeta({
+    isRefund,
+    timestamp,
+    orderId,
+    labels,
+}: {
+    isRefund: boolean
+    timestamp: string
+    orderId: string
+    labels: Record<string, string>
+}) {
+    return (
+        <>
+            <div style={{ textAlign: 'center', fontSize: '9px', marginBottom: '2px' }}>
+                {fmtDate(timestamp)}
+            </div>
+            <div style={{ textAlign: 'center', fontSize: '9px', marginBottom: '4px' }}>
+                {isRefund ? (
+                    <>
+                        <strong style={{ color: '#c00', fontSize: '12px' }}>— {posLabel('panel.pos.refundBanner', labels)} —</strong>
+                        <br />
+                        {posLabel('panel.pos.ref', labels)}: {orderId}
+                    </>
+                ) : (
+                    <>{posLabel('panel.pos.order', labels)}: #{orderId}</>
+                )}
+            </div>
+        </>
+    )
+}
+
+function ReceiptItems({
+    isSale,
+    sale,
+    refund,
+    currency,
+}: {
+    isSale: boolean
+    sale?: POSSale
+    refund?: POSRefund
+    currency: string
+}) {
+    if (isSale && sale) {
+        return (
+            <>
+                {sale.items.map((item) => (
+                    <div
+                        key={item.id}
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '1px 0',
+                        }}
+                    >
+                        <span>{item.quantity}× {item.title}</span>
+                        <span>{fmtPrice(item.unit_price * item.quantity, currency)}</span>
+                    </div>
+                ))}
+            </>
+        )
+    }
+
+    return (
+        <>
+            {(refund?.items ?? []).map((item, i) => (
+                <div
+                    key={i}
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '1px 0',
+                    }}
+                >
+                    <span>{item.title}{item.quantity > 1 ? ` ×${item.quantity}` : ''}</span>
+                    <span>-{fmtPrice(item.amount, currency)}</span>
+                </div>
+            ))}
+        </>
+    )
+}
+
+function ReceiptTotals({
+    isSale,
+    sale,
+    refund,
+    currency,
+    labels,
+}: {
+    isSale: boolean
+    sale?: POSSale
+    refund?: POSRefund
+    currency: string
+    labels: Record<string, string>
+}) {
+    if (isSale && sale) {
+        return (
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{labels['panel.pos.subtotal'] || 'Subtotal'}</span>
+                    <span>{fmtPrice(sale.subtotal, currency)}</span>
+                </div>
+                {sale.discount_amount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{labels['panel.pos.discount'] || 'Descuento'}</span>
+                        <span>-{fmtPrice(sale.discount_amount, currency)}</span>
+                    </div>
+                )}
+                {sale.tax_amount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{labels['panel.pos.tax'] || 'IVA'}</span>
+                        <span>{fmtPrice(sale.tax_amount, currency)}</span>
+                    </div>
+                )}
+                <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px' }}>
+                    <span>{labels['panel.pos.total'] || 'TOTAL'}</span>
+                    <span>{fmtPrice(sale.total, currency)}</span>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            {refund?.reason && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                    <span>{labels['panel.pos.refundReason'] || 'Motivo'}</span>
+                    <span>{refund.reason}</span>
+                </div>
+            )}
+            <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px' }}>
+                <span>{labels['panel.pos.total'] || 'TOTAL'}</span>
+                <span>-{fmtPrice(refund?.total_refund ?? 0, currency)}</span>
+            </div>
+        </div>
+    )
+}
+
+function ReceiptPaymentDetails({
+    sale,
+    labels,
+}: {
+    sale?: POSSale
+    labels: Record<string, string>
+}) {
+    if (!sale) return null
+
+    return (
+        <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                <span>{labels['panel.pos.paymentMethod'] || 'Método'}</span>
+                <span>{paymentMethodLabel(sale.payment_method, labels)}</span>
+            </div>
+            {sale.customer_name && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                    <span>{labels['panel.pos.customer'] || 'Cliente'}</span>
+                    <span>{sale.customer_name}</span>
+                </div>
+            )}
+        </>
+    )
+}
+
 // ── Component ──────────────────────────────────────────────────
 
 const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps>(
@@ -121,136 +313,37 @@ const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps>(
                 `}</style>
 
                 {/* ── Header ── */}
-                <div style={{ textAlign: 'center', marginBottom: '4px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '2px' }}>
-                        {receiptHeader || business.name}
-                    </div>
-                    {business.address && (
-                        <div style={{ fontSize: '9px' }}>{business.address}</div>
-                    )}
-                    {(business.nif || business.phone) && (
-                        <div style={{ fontSize: '9px' }}>
-                            {business.nif && `${posLabel('panel.pos.nif', labels)}: ${business.nif}`}
-                            {business.nif && business.phone && ' | '}
-                            {business.phone && `${posLabel('panel.pos.tel', labels)}: ${business.phone}`}
-                        </div>
-                    )}
-                </div>
+                <ReceiptHeader business={business} labels={labels} receiptHeader={receiptHeader} />
 
                 {/* separator */}
                 <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
 
                 {/* ── Meta ── */}
-                <div style={{ textAlign: 'center', fontSize: '9px', marginBottom: '2px' }}>
-                    {fmtDate(timestamp)}
-                </div>
-                <div style={{ textAlign: 'center', fontSize: '9px', marginBottom: '4px' }}>
-                    {isRefund ? (
-                        <>
-                            <strong style={{ color: '#c00', fontSize: '12px' }}>— {posLabel('panel.pos.refundBanner', labels)} —</strong>
-                            <br />
-                            {posLabel('panel.pos.ref', labels)}: {orderId}
-                        </>
-                    ) : (
-                        <>{posLabel('panel.pos.order', labels)}: #{orderId}</>
-                    )}
-                </div>
+                <ReceiptMeta isRefund={Boolean(isRefund)} timestamp={timestamp} orderId={orderId} labels={labels} />
 
                 {/* separator */}
                 <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
 
                 {/* ── Items ── */}
-                {isSale && sale.items.map((item) => (
-                    <div
-                        key={item.id}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            padding: '1px 0',
-                        }}
-                    >
-                        <span>{item.quantity}× {item.title}</span>
-                        <span>{fmtPrice(item.unit_price * item.quantity, currency)}</span>
-                    </div>
-                ))}
-
-                {isRefund && refund!.items.map((item, i) => (
-                    <div
-                        key={i}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            padding: '1px 0',
-                        }}
-                    >
-                        <span>{item.title}{item.quantity > 1 ? ` ×${item.quantity}` : ''}</span>
-                        <span>-{fmtPrice(item.amount, currency)}</span>
-                    </div>
-                ))}
+                <ReceiptItems isSale={Boolean(isSale)} sale={sale} refund={refund} currency={currency} />
 
                 {/* separator */}
                 <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
 
                 {/* ── Totals ── */}
-                {isSale && (
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>{labels['panel.pos.subtotal'] || 'Subtotal'}</span>
-                            <span>{fmtPrice(sale.subtotal, currency)}</span>
-                        </div>
-                        {sale.discount_amount > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{labels['panel.pos.discount'] || 'Descuento'}</span>
-                                <span>-{fmtPrice(sale.discount_amount, currency)}</span>
-                            </div>
-                        )}
-                        {sale.tax_amount > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{labels['panel.pos.tax'] || 'IVA'}</span>
-                                <span>{fmtPrice(sale.tax_amount, currency)}</span>
-                            </div>
-                        )}
-                        <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px' }}>
-                            <span>{labels['panel.pos.total'] || 'TOTAL'}</span>
-                            <span>{fmtPrice(sale.total, currency)}</span>
-                        </div>
-                    </div>
-                )}
-
-                {isRefund && (
-                    <div>
-                        {refund!.reason && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
-                                <span>{labels['panel.pos.refundReason'] || 'Motivo'}</span>
-                                <span>{refund!.reason}</span>
-                            </div>
-                        )}
-                        <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '14px' }}>
-                            <span>{labels['panel.pos.total'] || 'TOTAL'}</span>
-                            <span>-{fmtPrice(refund!.total_refund, currency)}</span>
-                        </div>
-                    </div>
-                )}
+                <ReceiptTotals
+                    isSale={Boolean(isSale)}
+                    sale={sale}
+                    refund={refund}
+                    currency={currency}
+                    labels={labels}
+                />
 
                 {/* separator */}
                 <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
 
                 {/* ── Payment method ── */}
-                {isSale && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
-                        <span>{labels['panel.pos.paymentMethod'] || 'Método'}</span>
-                        <span>{paymentMethodLabel(sale.payment_method, labels)}</span>
-                    </div>
-                )}
-
-                {isSale && sale.customer_name && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
-                        <span>{labels['panel.pos.customer'] || 'Cliente'}</span>
-                        <span>{sale.customer_name}</span>
-                    </div>
-                )}
+                <ReceiptPaymentDetails sale={isSale ? sale : undefined} labels={labels} />
 
                 {/* separator */}
                 <div style={{ borderTop: '1px dashed #000', margin: '6px 0' }} />

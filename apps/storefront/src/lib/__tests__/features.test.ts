@@ -43,6 +43,7 @@ const mockFlags: FeatureFlags = {
     enable_crm_segmentation: false,
     enable_crm_export: false,
     enable_email_notifications: false,
+    enable_custom_email_domain: false,
     enable_abandoned_cart_emails: false,
     enable_email_campaigns: false,
     enable_email_templates: false,

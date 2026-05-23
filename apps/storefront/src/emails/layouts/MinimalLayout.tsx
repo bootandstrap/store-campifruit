@@ -44,7 +44,7 @@ export default function MinimalLayout({
 
                     {/* Main content card */}
                     <Section style={card}>
-                        {children}
+                        {children as Parameters<typeof Section>[0]['children']}
                     </Section>
 
                     {/* Footer */}

@@ -18,6 +18,10 @@ vi.mock('@/lib/supabase/admin', () => ({
                         data: null,
                         error: null,
                     })),
+                    maybeSingle: vi.fn(() => ({
+                        data: null,
+                        error: null,
+                    })),
                 })),
             })),
         })),

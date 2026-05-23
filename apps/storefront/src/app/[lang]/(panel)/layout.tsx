@@ -24,6 +24,75 @@ import { calculateStoreReadiness } from '@/lib/store-readiness'
 import { evaluateAchievements, type AchievementContext } from '@/lib/achievements'
 import { buildModuleInfoList } from '@/lib/governance/build-module-info'
 
+type ConfigSnapshot = Awaited<ReturnType<typeof getConfig>>
+type PanelConfig = ConfigSnapshot['config']
+type PanelFeatureFlags = ConfigSnapshot['featureFlags']
+
+function resolvePanelLanguage(config: PanelConfig, urlLang: string): Locale {
+    return (
+        (config as Record<string, unknown>).panel_language as string
+        ?? config.language
+        ?? urlLang
+    ) as Locale
+}
+
+function countActiveModules(featureFlags: PanelFeatureFlags): number {
+    return [
+        featureFlags.enable_carousel,
+        featureFlags.enable_whatsapp_checkout,
+        featureFlags.enable_cms_pages,
+        featureFlags.enable_analytics,
+        featureFlags.enable_chatbot,
+        featureFlags.enable_self_service_returns,
+        featureFlags.enable_crm,
+        featureFlags.enable_reviews,
+        featureFlags.enable_pos,
+    ].filter(Boolean).length
+}
+
+function buildBreadcrumbMap(t: ReturnType<typeof createTranslator>): Record<string, string> {
+    return {
+        'mi-tienda': t('panel.section.myStore'),
+        ventas: t('panel.section.sales'),
+        ajustes: t('panel.section.settings'),
+        modulos: t('panel.nav.modules'),
+        pos: t('panel.nav.pos'),
+        catalogo: t('panel.nav.catalog'),
+        pedidos: t('panel.nav.orders'),
+        clientes: t('panel.nav.customers'),
+        utilidades: t('panel.nav.utilities'),
+        tienda: t('panel.nav.storeConfig'),
+        envios: t('panel.nav.shipping'),
+        'mi-proyecto': t('panel.nav.myProject'),
+        carrusel: t('panel.nav.carousel'),
+        mensajes: t('panel.nav.whatsapp'),
+        paginas: t('panel.nav.pages'),
+        analiticas: t('panel.nav.analytics'),
+        insignias: t('panel.nav.badges'),
+        chatbot: t('panel.nav.chatbot'),
+        devoluciones: t('panel.nav.returns'),
+        crm: t('panel.nav.crm'),
+        resenas: t('panel.nav.reviews'),
+        suscripcion: t('panel.nav.subscription'),
+        seo: t('panel.nav.seo'),
+        'redes-sociales': t('panel.nav.socialMedia'),
+        idiomas: t('panel.nav.i18n'),
+        automatizaciones: t('panel.nav.automations'),
+        auth: t('panel.nav.authAdvanced'),
+        canales: t('panel.nav.salesChannels'),
+        capacidad: t('panel.nav.capacity') || 'Capacidad',
+        email: t('panel.nav.email') || 'Email',
+    }
+}
+
+function buildGreetingMap(t: ReturnType<typeof createTranslator>) {
+    return {
+        morning: t('panel.greeting.morning'),
+        afternoon: t('panel.greeting.afternoon'),
+        evening: t('panel.greeting.evening'),
+    }
+}
+
 export default async function PanelLayout({
     children,
     params,
@@ -37,11 +106,7 @@ export default async function PanelLayout({
     // ── Panel language resolution ──
     // The panel language is independent from the storefront language.
     // Priority: panel_language (explicit) > config.language (legacy) > URL lang (fallback)
-    const panelLang = (
-        (config as Record<string, unknown>).panel_language as string
-        ?? config.language
-        ?? urlLang
-    ) as Locale
+    const panelLang = resolvePanelLanguage(config, urlLang)
 
     // If URL locale doesn't match the panel language, redirect to the correct one
     if (urlLang !== panelLang) {
@@ -104,17 +169,7 @@ export default async function PanelLayout({
     const { getPanelMetrics } = await import('@/lib/panel-data-service')
     const tenantId = config.tenant_id || ''
     const metrics = await getPanelMetrics(tenantId, lang)
-    const activeModuleCount = [
-        featureFlags.enable_carousel,
-        featureFlags.enable_whatsapp_checkout,
-        featureFlags.enable_cms_pages,
-        featureFlags.enable_analytics,
-        featureFlags.enable_chatbot,
-        featureFlags.enable_self_service_returns,
-        featureFlags.enable_crm,
-        featureFlags.enable_reviews,
-        featureFlags.enable_pos,
-    ].filter(Boolean).length
+    const activeModuleCount = countActiveModules(featureFlags)
 
     // ── Achievement evaluation (uses shared metrics) ──
     let achievementUnlockedIds: string[] = []
@@ -163,47 +218,10 @@ export default async function PanelLayout({
     const ownerName = profile?.full_name || config.business_name || ''
 
     // ── Breadcrumb map (segment → localized label) ──
-    const breadcrumbMap: Record<string, string> = {
-        // ── New hub routes ──
-        'mi-tienda': t('panel.section.myStore'),
-        ventas: t('panel.section.sales'),
-        ajustes: t('panel.section.settings'),
-        modulos: t('panel.nav.modules'),
-        pos: t('panel.nav.pos'),
-        // ── Legacy route labels (still needed for redirects + module pages) ──
-        catalogo: t('panel.nav.catalog'),
-        pedidos: t('panel.nav.orders'),
-        clientes: t('panel.nav.customers'),
-        utilidades: t('panel.nav.utilities'),
-        tienda: t('panel.nav.storeConfig'),
-        envios: t('panel.nav.shipping'),
-        'mi-proyecto': t('panel.nav.myProject'),
-        carrusel: t('panel.nav.carousel'),
-        mensajes: t('panel.nav.whatsapp'),
-        paginas: t('panel.nav.pages'),
-        analiticas: t('panel.nav.analytics'),
-        insignias: t('panel.nav.badges'),
-        chatbot: t('panel.nav.chatbot'),
-        devoluciones: t('panel.nav.returns'),
-        crm: t('panel.nav.crm'),
-        resenas: t('panel.nav.reviews'),
-        suscripcion: t('panel.nav.subscription'),
-        seo: t('panel.nav.seo'),
-        'redes-sociales': t('panel.nav.socialMedia'),
-        idiomas: t('panel.nav.i18n'),
-        automatizaciones: t('panel.nav.automations'),
-        auth: t('panel.nav.authAdvanced'),
-        canales: t('panel.nav.salesChannels'),
-        capacidad: t('panel.nav.capacity') || 'Capacidad',
-        email: t('panel.nav.email') || 'Email',
-    }
+    const breadcrumbMap = buildBreadcrumbMap(t)
 
     // ── Greetings ──
-    const greetings = {
-        morning: t('panel.greeting.morning'),
-        afternoon: t('panel.greeting.afternoon'),
-        evening: t('panel.greeting.evening'),
-    }
+    const greetings = buildGreetingMap(t)
 
     // ── Command Palette items ──
     const { getPanelSections } = await import('@/lib/panel-policy')

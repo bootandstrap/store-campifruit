@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
 import { HelpCircle } from "@untitledui/icons";
 import type { LabelProps as AriaLabelProps } from "react-aria-components";
 import { Label as AriaLabel } from "react-aria-components";
@@ -8,11 +7,9 @@ import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip/tooltip";
 import { cx } from "@/lib/utils/cn";
 
 interface LabelProps extends AriaLabelProps {
-    children: ReactNode;
     isRequired?: boolean;
     tooltip?: string;
     tooltipDescription?: string;
-    ref?: Ref<HTMLLabelElement>;
 }
 
 export const Label = ({ isRequired, tooltip, tooltipDescription, className, ...props }: LabelProps) => {

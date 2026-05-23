@@ -36,13 +36,17 @@ export default withGovernanceGate("enable_crm", async ({
         )
 
         if (existing.length === 0) {
+            const fullName = [
+                order.shipping_address?.first_name ?? "",
+                order.shipping_address?.last_name ?? "",
+            ].filter(Boolean).join(" ")
+
             // Auto-create contact from order data
             await crmService.createCrmContacts({
-                first_name: order.shipping_address?.first_name ?? "Unknown",
-                last_name: order.shipping_address?.last_name ?? "",
                 email: order.email,
+                full_name: fullName || "Unknown",
                 phone: order.shipping_address?.phone ?? undefined,
-                source: "order",
+                source: "other",
                 stage: "customer",
             })
 

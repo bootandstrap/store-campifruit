@@ -15,6 +15,7 @@ import AnalyticsTracker from '@/components/ui/AnalyticsTracker'
 import ServiceWorkerRegister from '@/components/ui/ServiceWorkerRegister'
 import NextTopLoader from 'nextjs-toploader'
 import { initOpenFeature } from '@/lib/openfeature'
+import { appendPath, getCanonicalSiteUrl } from '@/lib/seo/site-url'
 import './globals.css'
 
 // Initialize OpenFeature SDK with BootandStrap governance provider.
@@ -43,7 +44,7 @@ const outfit = Outfit({
 
 export async function generateMetadata(): Promise<Metadata> {
   const { config } = await getConfig()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const siteUrl = await getCanonicalSiteUrl()
 
   return {
     metadataBase: siteUrl ? new URL(siteUrl) : undefined,
@@ -69,9 +70,9 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: siteUrl ? {
       canonical: siteUrl,
       languages: {
-        'es': `${siteUrl}/es`,
-        'en': `${siteUrl}/en`,
-        'x-default': `${siteUrl}/es`,
+        'es': appendPath(siteUrl, '/es'),
+        'en': appendPath(siteUrl, '/en'),
+        'x-default': appendPath(siteUrl, '/es'),
       },
     } : undefined,
   }

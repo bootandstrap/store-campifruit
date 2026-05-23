@@ -39,7 +39,17 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
     try {
         // Build update payload — only include provided fields
-        const update: Record<string, unknown> = {}
+        const update: {
+            id: string
+            status?: "open" | "closed"
+            actual_cash?: number
+            discrepancy?: number
+            transaction_count?: number
+            total_revenue?: number
+            expected_cash?: number
+            close_notes?: string
+            closed_at?: Date
+        } = { id }
         if (body.status !== undefined) update.status = body.status
         if (body.actual_cash !== undefined) update.actual_cash = body.actual_cash
         if (body.discrepancy !== undefined) update.discrepancy = body.discrepancy
@@ -50,7 +60,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
 
         // Auto-set closed_at when closing
         if (body.status === "closed") {
-            update.closed_at = body.closed_at ?? new Date().toISOString()
+            update.closed_at = body.closed_at ? new Date(body.closed_at) : new Date()
             // Calculate discrepancy if actual_cash is provided and not already set
             if (body.actual_cash !== undefined && body.discrepancy === undefined) {
                 const current = await service.retrievePosShift(id)
@@ -58,7 +68,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             }
         }
 
-        const shift = await service.updatePosShifts(id, update)
+        const shift = await service.updatePosShifts(update)
         res.json({ shift })
     } catch {
         res.status(404).json({ message: `Shift ${id} not found` })

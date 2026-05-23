@@ -1,9 +1,8 @@
 "use client";
 
-import type { Ref, RefAttributes } from "react";
 import { isValidElement } from "react";
 import { ChevronDown } from "@untitledui/icons";
-import type { SelectProps as AriaSelectProps } from "react-aria-components";
+import type { ListBoxProps as AriaListBoxProps, SelectProps as AriaSelectProps } from "react-aria-components";
 import { Button as AriaButton, ListBox as AriaListBox, Select as AriaSelect, SelectValue as AriaSelectValue } from "react-aria-components";
 import { Avatar } from "@/components/ui/avatar/avatar";
 import { HintText } from "@/components/ui/input/hint-text";
@@ -22,11 +21,11 @@ export type { SelectItemType, CommonProps } from "./context";
 
 import type { FC, ReactNode } from "react";
 
-interface SelectProps extends Omit<AriaSelectProps<SelectItemType>, "children" | "items">, RefAttributes<HTMLDivElement>, CommonProps {
+interface SelectProps extends Omit<AriaSelectProps<SelectItemType>, "children" | "items">, CommonProps {
     items?: SelectItemType[];
     popoverClassName?: string;
     placeholderIcon?: FC | ReactNode;
-    children: ReactNode | ((item: SelectItemType) => ReactNode);
+    children: AriaListBoxProps<SelectItemType>["children"];
 }
 
 interface SelectValueProps {
@@ -35,14 +34,12 @@ interface SelectValueProps {
     isFocused: boolean;
     isDisabled: boolean;
     placeholder?: string;
-    ref?: Ref<HTMLButtonElement>;
     placeholderIcon?: FC | ReactNode;
 }
 
-const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, placeholderIcon, ref }: SelectValueProps) => {
+const SelectValue = ({ isOpen, isFocused, isDisabled, size, placeholder, placeholderIcon }: SelectValueProps) => {
     return (
         <AriaButton
-            ref={ref}
             className={cx(
                 "relative flex w-full cursor-pointer items-center rounded-lg bg-brand shadow-xs ring-1 ring-brand outline-hidden transition duration-100 ease-linear ring-inset",
                 (isFocused || isOpen) && "ring-2 ring-brand",

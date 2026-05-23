@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import type { ReactNode } from "react";
 import { Checkbox as AriaCheckbox, type CheckboxProps as AriaCheckboxProps } from "react-aria-components";
 import { cx } from "@/lib/utils/cn";
 
@@ -58,7 +58,6 @@ export const CheckboxBase = ({ className, isSelected, isDisabled, isIndeterminat
 CheckboxBase.displayName = "CheckboxBase";
 
 interface CheckboxProps extends AriaCheckboxProps {
-    ref?: Ref<HTMLLabelElement>;
     size?: "sm" | "md";
     label?: ReactNode;
     hint?: ReactNode;

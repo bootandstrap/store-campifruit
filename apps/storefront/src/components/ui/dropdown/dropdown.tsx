@@ -1,6 +1,6 @@
 "use client";
 
-import type { FC, RefAttributes } from "react";
+import type { FC } from "react";
 import { DotsVertical } from "@untitledui/icons";
 import type {
     ButtonProps as AriaButtonProps,
@@ -132,7 +132,7 @@ const DropdownSeparator = (props: AriaSeparatorProps) => {
     return <AriaSeparator {...props} className={cx("my-1 h-px w-full bg-border-sec", props.className)} />;
 };
 
-const DropdownDotsButton = (props: AriaButtonProps & RefAttributes<HTMLButtonElement>) => {
+const DropdownDotsButton = (props: AriaButtonProps) => {
     return (
         <AriaButton
             {...props}

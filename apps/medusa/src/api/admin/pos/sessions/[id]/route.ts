@@ -34,17 +34,23 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     const service = req.scope.resolve(POS_MODULE) as PosModuleService
 
     try {
-        const update: Record<string, unknown> = {}
+        const update: {
+            id: string
+            status?: "open" | "closed" | "suspended"
+            closing_balance?: number
+            close_notes?: string
+            closed_at?: Date
+        } = { id }
         if (body.status !== undefined) update.status = body.status
         if (body.closing_balance !== undefined) update.closing_balance = body.closing_balance
         if (body.close_notes !== undefined) update.close_notes = body.close_notes
 
         // Auto-set closed_at when closing
         if (body.status === "closed") {
-            update.closed_at = body.closed_at ?? new Date().toISOString()
+            update.closed_at = body.closed_at ? new Date(body.closed_at) : new Date()
         }
 
-        const session = await service.updatePosSessions(id, update)
+        const session = await service.updatePosSessions(update)
         res.json({ session })
     } catch {
         res.status(404).json({ message: `Session ${id} not found` })

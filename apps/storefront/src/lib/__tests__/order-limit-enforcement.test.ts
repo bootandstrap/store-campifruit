@@ -92,10 +92,9 @@ describe('checkOrderLimit', () => {
         const limits = makeLimits({ max_orders_month: 50 })
         const result = await checkOrderLimit(TENANT_ID, limits)
         expect(result.allowed).toBe(true)
-        expect(consoleSpy).toHaveBeenCalledWith(
-            '[order-limits] RPC error:',
-            'connection timeout'
-        )
+        expect(consoleSpy).toHaveBeenCalledTimes(1)
+        expect(String(consoleSpy.mock.calls[0]?.[0] ?? '')).toContain('[order-limits] RPC error:')
+        expect(String(consoleSpy.mock.calls[0]?.[0] ?? '')).toContain('connection timeout')
         consoleSpy.mockRestore()
     })
 

@@ -162,7 +162,9 @@ function createResendProvider(apiKey: string): EmailProvider {
                     }
                     // Remove internal props before rendering
                     delete (emailProps as Record<string, unknown>)._designSlug
-                    html = await render(React.createElement(Component, emailProps))
+                    html = await render(
+                        React.createElement(Component, emailProps) as Parameters<typeof render>[0],
+                    )
                 } catch {
                     // Fallback to legacy buildHtml if React Email fails
                     html = buildHtml(payload)
@@ -833,4 +835,3 @@ export function getEmailProviderName(): string {
 export function invalidateTenantEmailProvider(tenantId: string): void {
     _tenantProviders.delete(tenantId)
 }
-
