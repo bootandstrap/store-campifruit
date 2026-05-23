@@ -23,6 +23,11 @@ const REQUIRED_PANEL_KEYS = [
     'panel.governance.trial',
     'panel.governance.active',
     'panel.tabs.promotions',
+    'panel.config.stockMode',
+    'panel.config.stockAlwaysAvailable',
+    'panel.config.stockAlwaysDesc',
+    'panel.config.stockManaged',
+    'panel.config.stockManagedDesc',
 ]
 
 describe('panel/storefront audit regressions', () => {
@@ -66,5 +71,13 @@ describe('panel/storefront audit regressions', () => {
         const sidebar = read('components/panel/PanelSidebar.tsx')
         expect(sidebar).toContain('{labels.health}')
         expect(sidebar).not.toContain('>Health<')
+    })
+
+    it('translates sidebar sub-item labels instead of rendering raw i18n keys', () => {
+        const sidebar = read('components/panel/PanelSidebar.tsx')
+        const layout = read('app/[lang]/(panel)/layout.tsx')
+
+        expect(sidebar).toContain("translationMap[sub.label] ?? sub.label")
+        expect(layout).toContain("key.startsWith('panel.tabs.')")
     })
 })

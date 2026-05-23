@@ -266,6 +266,10 @@ export default async function PanelLayout({
         hint: t('panel.cmdPalette.hint'),
     }
 
+    const sidebarTranslationMap = Object.fromEntries(
+        Object.entries(dictionary).filter(([key]) => key.startsWith('panel.tabs.'))
+    ) as Record<string, string>
+
     return (
         <PanelThemeProvider>
         <PanelShell
@@ -284,6 +288,7 @@ export default async function PanelLayout({
                 backToStore: t('panel.nav.backToStore'),
                 health: t('storeHealth.title'),
             }}
+            sidebarTranslationMap={sidebarTranslationMap}
             featureFlags={{
                 enable_carousel: featureFlags.enable_carousel,
                 enable_whatsapp_checkout: featureFlags.enable_whatsapp_checkout,

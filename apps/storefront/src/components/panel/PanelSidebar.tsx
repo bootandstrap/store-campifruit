@@ -49,6 +49,7 @@ interface PanelSidebarProps {
     lang: string
     businessName: string
     labels: PanelSidebarLabels
+    translationMap?: Record<string, string>
     featureFlags: PanelFeatureFlags
     badges?: Record<string, number>
     planName?: string
@@ -174,6 +175,7 @@ export default function PanelSidebar({
     lang,
     businessName,
     labels,
+    translationMap = {},
     featureFlags,
     badges = {},
     planName,
@@ -381,6 +383,7 @@ export default function PanelSidebar({
     const renderSubItem = (sub: PanelSubItem) => {
         const active = isSubItemActive(sub.href)
         const SubIcon = sub.icon ? SUB_ITEM_ICONS[sub.icon] : null
+        const label = translationMap[sub.label] ?? sub.label
 
         return (
             <Link
@@ -409,7 +412,7 @@ export default function PanelSidebar({
                     <span style={{ width: 14, height: 14, flexShrink: 0 }} />
                 )}
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {sub.label}
+                    {label}
                 </span>
                 {sub.badge != null && sub.badge > 0 && (
                     <span style={{ ...S.badge, fontSize: 9, minWidth: 16, height: 16 }}>

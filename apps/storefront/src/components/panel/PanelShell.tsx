@@ -30,6 +30,7 @@ interface PanelShellProps {
     ownerName: string
     businessName: string
     sidebarLabels: PanelSidebarLabels
+    sidebarTranslationMap?: Record<string, string>
     featureFlags: PanelFeatureFlags
     breadcrumbMap: Record<string, string>
     greetings: {
@@ -64,6 +65,7 @@ export default function PanelShell({
     ownerName,
     businessName,
     sidebarLabels,
+    sidebarTranslationMap,
     featureFlags,
     breadcrumbMap,
     greetings,
@@ -100,6 +102,7 @@ export default function PanelShell({
                     lang={lang}
                     businessName={businessName}
                     labels={sidebarLabels}
+                    translationMap={sidebarTranslationMap}
                     featureFlags={featureFlags}
                     badges={badges}
                     planName={planName}
