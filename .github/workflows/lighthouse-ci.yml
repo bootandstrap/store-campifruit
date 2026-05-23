@@ -15,7 +15,7 @@ on:
         required: true
         type: string
   workflow_run:
-    workflows: ['Deploy']
+    workflows: ['Build & Deploy Storefront']
     types: [completed]
 
 permissions:
@@ -23,10 +23,9 @@ permissions:
 
 jobs:
   lighthouse:
-    if: github.repository != 'bootandstrap/storefront-template'
     name: Lighthouse Audit
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.repository != 'bootandstrap/storefront-template' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
 
     steps:
       - name: Checkout

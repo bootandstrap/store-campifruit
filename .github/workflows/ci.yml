@@ -281,13 +281,11 @@ jobs:
 
   # ── Lighthouse CI ──────────────────────────────
   lighthouse:
-    if: github.repository != 'bootandstrap/storefront-template'
+    if: github.repository != 'bootandstrap/storefront-template' && github.event_name == 'pull_request'
     name: Lighthouse CI
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
-    # Only run on PRs to main
-    if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout

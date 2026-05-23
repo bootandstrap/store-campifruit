@@ -107,4 +107,40 @@ describe('panel/storefront audit regressions', () => {
         expect(migration).toContain('tenant_id UUID NOT NULL')
         expect(migration).toContain('sort_order INTEGER NOT NULL DEFAULT 0')
     })
+
+    it('prepares a writable next cache directory for the runtime user', () => {
+        const dockerfile = readFileSync(
+            join(ROOT, '..', '..', '..', 'apps', 'storefront', 'Dockerfile'),
+            'utf-8'
+        )
+
+        expect(dockerfile).toContain('COPY --from=builder --chown=nextjs:nodejs')
+        expect(dockerfile).toContain('mkdir -p ./apps/storefront/.next/cache')
+        expect(dockerfile).toContain('chown -R nextjs:nodejs /app')
+    })
+
+    it('runs Lighthouse from the storefront package in the monorepo', () => {
+        const lhci = readFileSync(
+            join(ROOT, '..', '..', '..', 'apps', 'storefront', 'lighthouserc.json'),
+            'utf-8'
+        )
+
+        expect(lhci).toContain('pnpm --dir apps/storefront start')
+        expect(lhci).not.toContain('"startServerCommand": "pnpm start"')
+    })
+
+    it('keeps GitHub workflow guards in a single valid if expression', () => {
+        const ciWorkflow = readFileSync(
+            join(ROOT, '..', '..', '..', '.github', 'workflows', 'ci.yml'),
+            'utf-8'
+        )
+        const lighthouseWorkflow = readFileSync(
+            join(ROOT, '..', '..', '..', '.github', 'workflows', 'lighthouse-ci.yml'),
+            'utf-8'
+        )
+
+        expect(ciWorkflow).toContain("if: github.repository != 'bootandstrap/storefront-template' && github.event_name == 'pull_request'")
+        expect(lighthouseWorkflow).toContain("workflows: ['Build & Deploy Storefront']")
+        expect(lighthouseWorkflow).toContain("github.repository != 'bootandstrap/storefront-template' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')")
+    })
 })
