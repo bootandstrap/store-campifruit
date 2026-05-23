@@ -79,8 +79,11 @@ jobs:
 
     steps:
       - name: Deploy Medusa via Dokploy
-        if: ${{ secrets.DOKPLOY_MEDUSA_APP_ID != '' }}
         run: |
+          if [ -z "${{ secrets.DOKPLOY_MEDUSA_APP_ID }}" ]; then
+            echo "⚠️ DOKPLOY_MEDUSA_APP_ID not configured — skipping shared Medusa redeploy"
+            exit 0
+          fi
           curl -sf -X POST "${{ secrets.DOKPLOY_URL }}/api/trpc/application.redeploy" \
             -H "x-api-key: ${{ secrets.DOKPLOY_API_TOKEN }}" \
             -H "Content-Type: application/json" \

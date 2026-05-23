@@ -332,11 +332,10 @@ jobs:
 
   # ── Failure Notification ────────────────────────
   notify-failure:
-    if: github.repository != 'bootandstrap/storefront-template'
     name: Notify on Failure
     runs-on: ubuntu-latest
     needs: [build, unit-tests, medusa-tests]
-    if: failure()
+    if: github.repository != 'bootandstrap/storefront-template' && failure()
     steps:
       - name: Send failure notification
         run: |

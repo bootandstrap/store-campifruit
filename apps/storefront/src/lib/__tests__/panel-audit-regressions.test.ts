@@ -134,13 +134,22 @@ describe('panel/storefront audit regressions', () => {
             join(ROOT, '..', '..', '..', '.github', 'workflows', 'ci.yml'),
             'utf-8'
         )
+        const medusaWorkflow = readFileSync(
+            join(ROOT, '..', '..', '..', '.github', 'workflows', 'build-medusa.yml'),
+            'utf-8'
+        )
         const lighthouseWorkflow = readFileSync(
             join(ROOT, '..', '..', '..', '.github', 'workflows', 'lighthouse-ci.yml'),
             'utf-8'
         )
 
         expect(ciWorkflow).toContain("if: github.repository != 'bootandstrap/storefront-template' && github.event_name == 'pull_request'")
+        expect(ciWorkflow).toContain("if: github.repository != 'bootandstrap/storefront-template' && failure()")
+        expect(medusaWorkflow).toContain('DOKPLOY_MEDUSA_APP_ID not configured')
+        expect(medusaWorkflow).not.toContain("if: ${{ secrets.DOKPLOY_MEDUSA_APP_ID != '' }}")
         expect(lighthouseWorkflow).toContain("workflows: ['Build & Deploy Storefront']")
         expect(lighthouseWorkflow).toContain("github.repository != 'bootandstrap/storefront-template' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')")
+        expect(lighthouseWorkflow).toContain('configPath: ./apps/storefront/lighthouserc.deploy.json')
+        expect(lighthouseWorkflow).toContain('steps.lighthouse.outputs.assertionResults')
     })
 })
