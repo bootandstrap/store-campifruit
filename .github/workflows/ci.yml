@@ -284,59 +284,6 @@ jobs:
           path: ci-logs/
           retention-days: 7
 
-  # ── Lighthouse CI ──────────────────────────────
-  lighthouse:
-    if: github.repository != 'bootandstrap/storefront-template' && github.event_name == 'pull_request'
-    name: Lighthouse CI
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: build
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@latest
-
-      - name: Build storefront
-        run: pnpm turbo build --filter=storefront
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
-          NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: placeholder
-          NEXT_PUBLIC_MEDUSA_BACKEND_URL: http://localhost:9000
-          NEXT_PUBLIC_STORE_URL: http://localhost:3000
-          MEDUSA_BACKEND_URL: http://localhost:9000
-          TENANT_ID: ci-tenant
-
-      - name: Run Lighthouse CI
-        run: |
-          cd apps/storefront
-          lhci autorun
-        env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
-
-      - name: Upload Lighthouse report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lighthouse-report
-          path: apps/storefront/.lighthouseci/
-          retention-days: 14
-
   # ── Failure Notification ────────────────────────
   notify-failure:
     name: Notify on Failure

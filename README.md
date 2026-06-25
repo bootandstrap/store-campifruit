@@ -2,7 +2,7 @@
 
 SaaS-managed e-commerce template: Next.js 16, Medusa v2, Supabase. White-labeled storefronts governed via feature flags, plan limits, and dynamic theming.
 
-> Last updated: 2026-04-14
+> Last updated: 2026-06-25
 
 ## Stack
 
@@ -55,7 +55,7 @@ ecommerce-template/
 
 ## Governance
 
-81 feature flags, 31 plan limits, 13 modules. All fetched at runtime via `getConfig()` from central Supabase.
+Current tenant runtime contract: `83` feature flags, `31` plan limits, `13` modules. All fetched at runtime via `getConfig()` from central Supabase. Control-plane ownership remains in `BOOTANDSTRAP_WEB`.
 
 ## License
 

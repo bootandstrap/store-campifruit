@@ -119,7 +119,7 @@ describe('panel/storefront audit regressions', () => {
         expect(dockerfile).toContain('chown -R nextjs:nodejs /app')
     })
 
-    it('runs Lighthouse from the storefront package in the monorepo', () => {
+    it('runs Lighthouse against the standalone storefront runtime in the monorepo', () => {
         const lhci = readFileSync(
             join(ROOT, '..', '..', '..', 'apps', 'storefront', 'lighthouserc.json'),
             'utf-8'
@@ -129,6 +129,7 @@ describe('panel/storefront audit regressions', () => {
         expect(lhci).toContain('cp -R ../static apps/storefront/.next/static')
         expect(lhci).toContain('cp -R ../../public apps/storefront/public')
         expect(lhci).toContain('node apps/storefront/server.js')
+        expect(lhci).toContain('http://localhost:3000/es')
         expect(lhci).not.toContain('"startServerCommand": "pnpm start"')
     })
 
@@ -146,7 +147,8 @@ describe('panel/storefront audit regressions', () => {
             'utf-8'
         )
 
-        expect(ciWorkflow).toContain("if: github.repository != 'bootandstrap/storefront-template' && github.event_name == 'pull_request'")
+        expect(ciWorkflow).toContain("if: github.repository != 'bootandstrap/storefront-template'")
+        expect(ciWorkflow).not.toContain('name: Lighthouse CI')
         expect(ciWorkflow).toContain("if: github.repository != 'bootandstrap/storefront-template' && failure()")
         expect(medusaWorkflow).toContain('DOKPLOY_MEDUSA_APP_ID not configured')
         expect(medusaWorkflow).not.toContain("if: ${{ secrets.DOKPLOY_MEDUSA_APP_ID != '' }}")

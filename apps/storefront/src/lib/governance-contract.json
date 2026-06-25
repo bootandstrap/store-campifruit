@@ -237,7 +237,7 @@
     }
   },
   "limits": {
-    "count": 32,
+    "count": 31,
     "keys": [
       "backup_frequency_hours",
       "max_admin_users",
@@ -259,7 +259,6 @@
       "max_newsletter_subscribers",
       "max_orders_month",
       "max_payment_methods",
-      "max_pos_kiosk_devices",
       "max_pos_payment_methods",
       "max_products",
       "max_promotions_active",
@@ -293,7 +292,6 @@
       "max_newsletter_subscribers",
       "max_orders_month",
       "max_payment_methods",
-      "max_pos_kiosk_devices",
       "max_pos_payment_methods",
       "max_products",
       "max_promotions_active",

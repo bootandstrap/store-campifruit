@@ -228,7 +228,6 @@ export const FALLBACK_CONFIG = {
         max_pos_payment_methods: 0,
         max_crm_contacts: 0,
         max_automations: 0,
-        max_pos_kiosk_devices: 0,
         max_backups: 0,
         backup_frequency_hours: 0,
     },

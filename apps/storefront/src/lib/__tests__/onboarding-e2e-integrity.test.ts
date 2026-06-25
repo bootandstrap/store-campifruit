@@ -461,6 +461,7 @@ describe('PanelTourDriver (driver.js)', () => {
 
 describe('ModuleConfigStep coverage', () => {
   const configStep = readFileSync(join(ONBOARDING, 'ModuleConfigStep.tsx'), 'utf-8')
+  const configDefinitions = readFileSync(join(ONBOARDING, 'module-config-definitions.ts'), 'utf-8')
 
   // Modules that should have either editable config or info panels
   // These must match the switch/case keys in ModuleConfigStep
@@ -480,8 +481,7 @@ describe('ModuleConfigStep coverage', () => {
   ]
 
   it.each(MODULE_KEYS)('handles module: %s', (key) => {
-    // Each module key should appear in the config step logic
-    expect(configStep).toContain(`'${key}'`)
+    expect(configDefinitions).toContain(`'${key}'`)
   })
 
   it('uses saveOnboardingConfigAction for persistence', () => {
@@ -493,12 +493,12 @@ describe('ModuleConfigStep coverage', () => {
   })
 
   it('supports all field types (text, select, toggle, info, limit_bar, feature_list)', () => {
-    expect(configStep).toContain("type: 'text'")
-    expect(configStep).toContain("type: 'select'")
-    expect(configStep).toContain("type: 'toggle'")
-    expect(configStep).toContain("type: 'info'")
-    expect(configStep).toContain("type: 'limit_bar'")
-    expect(configStep).toContain("type: 'feature_list'")
+    expect(configDefinitions).toContain("type: 'text'")
+    expect(configDefinitions).toContain("type: 'select'")
+    expect(configDefinitions).toContain("type: 'toggle'")
+    expect(configDefinitions).toContain("type: 'info'")
+    expect(configDefinitions).toContain("type: 'limit_bar'")
+    expect(configDefinitions).toContain("type: 'feature_list'")
   })
 
   it('has meaningful editable fields for most modules', () => {
@@ -509,104 +509,101 @@ describe('ModuleConfigStep coverage', () => {
       'automation', 'capacidad',
     ]
     for (const mod of EDITABLE_MODULES) {
-      // Each should have at least one field with key that doesn't start with _
-      const caseBlock = configStep.split(`case '${mod}':`)[1]?.split(/case '|default:/)[0] || ''
+      const caseBlock = configDefinitions.split(`case '${mod}':`)[1]?.split(/case '|default:/)[0] || ''
       expect(caseBlock).toMatch(/key: '[a-z]/)
     }
   })
 
   it('displays limit bars for modules with plan limits', () => {
-    // Modules with limit_bar should reference planLimits
-    expect(configStep).toContain('planLimits.max_products')
-    expect(configStep).toContain('planLimits.max_chatbot_messages_month')
-    expect(configStep).toContain('planLimits.max_crm_contacts')
-    expect(configStep).toContain('planLimits.max_requests_day')
-    expect(configStep).toContain('planLimits.storage_limit_mb')
-    expect(configStep).toContain('planLimits.max_file_upload_mb')
+    expect(configDefinitions).toContain('planLimits.max_products')
+    expect(configDefinitions).toContain('planLimits.max_chatbot_messages_month')
+    expect(configDefinitions).toContain('planLimits.max_crm_contacts')
+    expect(configDefinitions).toContain('planLimits.max_requests_day')
+    expect(configDefinitions).toContain('planLimits.storage_limit_mb')
+    expect(configDefinitions).toContain('planLimits.max_file_upload_mb')
   })
 
   // --- POS operational depth ---
   it('POS has receipt footer, tax display, tips, and sound config', () => {
-    expect(configStep).toContain("'pos_receipt_footer'")
-    expect(configStep).toContain("'pos_tax_display'")
-    expect(configStep).toContain("'pos_enable_tips'")
-    expect(configStep).toContain("'pos_tip_percentages'")
-    expect(configStep).toContain("'pos_sound_enabled'")
+    expect(configDefinitions).toContain("'pos_receipt_footer'")
+    expect(configDefinitions).toContain("'pos_tax_display'")
+    expect(configDefinitions).toContain("'pos_enable_tips'")
+    expect(configDefinitions).toContain("'pos_tip_percentages'")
+    expect(configDefinitions).toContain("'pos_sound_enabled'")
   })
 
   // --- Chatbot SOTA ---
   it('Chatbot has SOTA tone previews', () => {
-    // Tone options should contain preview micro-copy (quotes)
-    expect(configStep).toContain('Buenos días')
-    expect(configStep).toContain('Hey!')
+    expect(configDefinitions).toContain('Buenos días')
+    expect(configDefinitions).toContain('Hey!')
   })
 
   it('Chatbot has knowledge scope and auto-open delay', () => {
-    expect(configStep).toContain("'chatbot_knowledge_scope'")
-    expect(configStep).toContain("'chatbot_auto_open_delay'")
-    expect(configStep).toContain("'products_only'")
-    expect(configStep).toContain("'products_and_faq'")
-    expect(configStep).toContain("'full_catalog'")
+    expect(configDefinitions).toContain("'chatbot_knowledge_scope'")
+    expect(configDefinitions).toContain("'chatbot_auto_open_delay'")
+    expect(configDefinitions).toContain("'products_only'")
+    expect(configDefinitions).toContain("'products_and_faq'")
+    expect(configDefinitions).toContain("'full_catalog'")
   })
 
   // --- Capacity dual thresholds ---
   it('Capacity has dual thresholds and auto-upgrade toggle', () => {
-    expect(configStep).toContain("'capacity_warning_threshold_pct'")
-    expect(configStep).toContain("'capacity_critical_threshold_pct'")
-    expect(configStep).toContain("'capacity_auto_upgrade_interest'")
+    expect(configDefinitions).toContain("'capacity_warning_threshold_pct'")
+    expect(configDefinitions).toContain("'capacity_critical_threshold_pct'")
+    expect(configDefinitions).toContain("'capacity_auto_upgrade_interest'")
   })
 
   it('Capacity has split limit bars (requests, storage, upload)', () => {
-    expect(configStep).toContain("'_limits_capacity_requests'")
-    expect(configStep).toContain("'_limits_capacity_storage'")
-    expect(configStep).toContain("'_limits_capacity_upload'")
+    expect(configDefinitions).toContain("'_limits_capacity_requests'")
+    expect(configDefinitions).toContain("'_limits_capacity_storage'")
+    expect(configDefinitions).toContain("'_limits_capacity_upload'")
   })
 
   // --- Phase 5: CRM operational depth ---
   it('CRM has auto-tag, customer tag, notify, and export format', () => {
-    expect(configStep).toContain("'crm_auto_tag_customers'")
-    expect(configStep).toContain("'crm_new_customer_tag'")
-    expect(configStep).toContain("'crm_notify_new_contact'")
-    expect(configStep).toContain("'crm_export_format'")
-    expect(configStep).toContain("'csv'")
-    expect(configStep).toContain("'excel'")
+    expect(configDefinitions).toContain("'crm_auto_tag_customers'")
+    expect(configDefinitions).toContain("'crm_new_customer_tag'")
+    expect(configDefinitions).toContain("'crm_notify_new_contact'")
+    expect(configDefinitions).toContain("'crm_export_format'")
+    expect(configDefinitions).toContain("'csv'")
+    expect(configDefinitions).toContain("'excel'")
   })
 
   // --- Phase 5: Sales Channels operational depth ---
   it('Sales Channels has WhatsApp greeting, preferred contact, hours, and free shipping', () => {
-    expect(configStep).toContain("'sales_whatsapp_greeting'")
-    expect(configStep).toContain("'sales_preferred_contact'")
-    expect(configStep).toContain("'sales_business_hours_display'")
-    expect(configStep).toContain("'sales_highlight_free_shipping'")
-    expect(configStep).toContain("'weekdays'")
-    expect(configStep).toContain("'full_week'")
+    expect(configDefinitions).toContain("'sales_whatsapp_greeting'")
+    expect(configDefinitions).toContain("'sales_preferred_contact'")
+    expect(configDefinitions).toContain("'sales_business_hours_display'")
+    expect(configDefinitions).toContain("'sales_highlight_free_shipping'")
+    expect(configDefinitions).toContain("'weekdays'")
+    expect(configDefinitions).toContain("'full_week'")
   })
 
   // --- Phase 5: Email Marketing operational depth ---
   it('Email Marketing has sender name, reply-to, footer, and cart delay', () => {
-    expect(configStep).toContain("'email_sender_name'")
-    expect(configStep).toContain("'email_reply_to'")
-    expect(configStep).toContain("'email_footer_text'")
-    expect(configStep).toContain("'email_abandoned_cart_delay'")
-    expect(configStep).toContain("'1h'")
-    expect(configStep).toContain("'3h'")
-    expect(configStep).toContain("'24h'")
+    expect(configDefinitions).toContain("'email_sender_name'")
+    expect(configDefinitions).toContain("'email_reply_to'")
+    expect(configDefinitions).toContain("'email_footer_text'")
+    expect(configDefinitions).toContain("'email_abandoned_cart_delay'")
+    expect(configDefinitions).toContain("'1h'")
+    expect(configDefinitions).toContain("'3h'")
+    expect(configDefinitions).toContain("'24h'")
   })
 
   // --- Phase 5: Ecommerce split limit bars ---
   it('Ecommerce has split limit bars (products, orders) and min_order_amount', () => {
-    expect(configStep).toContain("'_limits_ecommerce_products'")
-    expect(configStep).toContain("'_limits_ecommerce_orders'")
-    expect(configStep).toContain("'min_order_amount'")
-    expect(configStep).toContain('planLimits.max_categories')
+    expect(configDefinitions).toContain("'_limits_ecommerce_products'")
+    expect(configDefinitions).toContain("'_limits_ecommerce_orders'")
+    expect(configDefinitions).toContain("'min_order_amount'")
+    expect(configDefinitions).toContain('planLimits.max_categories')
   })
 
   // --- Phase 5: Feature lists on more modules ---
   it('Feature lists on ecommerce, email, channels, and automation', () => {
-    expect(configStep).toContain("'_features_ecommerce'")
-    expect(configStep).toContain("'_features_email'")
-    expect(configStep).toContain("'_features_channels'")
-    expect(configStep).toContain("'_features_automation'")
+    expect(configDefinitions).toContain("'_features_ecommerce'")
+    expect(configDefinitions).toContain("'_features_email'")
+    expect(configDefinitions).toContain("'_features_channels'")
+    expect(configDefinitions).toContain("'_features_automation'")
   })
 })
 
@@ -637,6 +634,7 @@ describe('Dependencies', () => {
 
 describe('Polish pass integrity', () => {
   const configStep = readFileSync(join(ONBOARDING, 'ModuleConfigStep.tsx'), 'utf-8')
+  const configDefinitions = readFileSync(join(ONBOARDING, 'module-config-definitions.ts'), 'utf-8')
   const matrixStep = readFileSync(join(ONBOARDING, 'ModuleMatrixStep.tsx'), 'utf-8')
   const actions = readFileSync(ACTIONS, 'utf-8')
   const dictES = loadJSON(DICT_ES) as Record<string, string>
@@ -644,12 +642,10 @@ describe('Polish pass integrity', () => {
 
   // F2: store_email must appear exactly once as a config key (in email_marketing only)
   it('store_email field used only in email_marketing (no duplicate in CRM)', () => {
-    // Count occurrences of key: 'store_email' in the switch/case config definitions
-    const matches = configStep.match(/key: 'store_email'/g) || []
+    const matches = configDefinitions.match(/key: 'store_email'/g) || []
     expect(matches.length).toBe(1)
-    // CRM must NOT have a store_email field — uses info reference instead
-    expect(configStep).toContain("'_info_crm_email'")
-    expect(configStep).toContain('onboarding.config.crm.emailInfo')
+    expect(configDefinitions).toContain("'_info_crm_email'")
+    expect(configDefinitions).toContain('onboarding.config.crm.emailInfo')
   })
 
   // F3: ModuleMatrixStep must NOT have hardcoded Spanish category labels
@@ -705,7 +701,7 @@ describe('Polish pass integrity', () => {
     expect(whitelistKeys.length).toBe(51) // updated for new fields
 
     // Extract all field keys from ModuleConfigStep
-    const fieldKeys = configStep.match(/key: '([a-z_]+)'/g)?.map(s => s.replace(/key: '|'/g, '')) || []
+    const fieldKeys = configDefinitions.match(/key: '([a-z_]+)'/g)?.map(s => s.replace(/key: '|'/g, '')) || []
 
     // Every whitelist key must appear as a field key or be a known exception
     for (const key of whitelistKeys) {
@@ -719,11 +715,9 @@ describe('Polish pass integrity', () => {
     // min_order_amount, free_shipping_threshold, low_stock_threshold should be type: 'number'
     const numericFields = ['min_order_amount', 'free_shipping_threshold', 'low_stock_threshold']
     for (const field of numericFields) {
-      // Find the field definition block
-      const fieldIdx = configStep.indexOf(`key: '${field}'`)
-      expect(fieldIdx).toBeGreaterThan(-1)
-      // The type: 'number' should follow within ~200 chars after the key
-      const context = configStep.substring(fieldIdx, fieldIdx + 200)
+      const fieldIdxInDefinitions = configDefinitions.indexOf(`key: '${field}'`)
+      expect(fieldIdxInDefinitions).toBeGreaterThan(-1)
+      const context = configDefinitions.substring(fieldIdxInDefinitions, fieldIdxInDefinitions + 200)
       expect(context).toContain("type: 'number'")
     }
   })

@@ -253,7 +253,6 @@ export const PlanLimitsSchema = z.object({
     max_crm_contacts: z.number(),
     max_pos_payment_methods: z.number(),
     max_automations: z.number(),
-    max_pos_kiosk_devices: z.number(),
     // Backup & Storage (Phase 6 — 2026-04)
     max_backups: z.number(),
     backup_frequency_hours: z.number(),

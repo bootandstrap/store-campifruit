@@ -1,7 +1,7 @@
 # GEMINI — Tenant Storefront Guide
 
 > AI agent guide for operating and customizing tenant storefronts.
-> Last updated: 2026-04-17 (post-logger migration + integration audit).
+> Last updated: 2026-06-25 (runtime/control-plane boundary refresh).
 
 ### Agent Rules
 - **NO QUICK FIXES**: Never use graceful fallbacks, try/catch band-aids, or silent failures as a substitute for proper integration. Every feature must be intentionally developed, fully wired, and production-complete. If a table is needed, create the migration. If a module is needed, register it. No half-measures.
@@ -29,6 +29,15 @@ Tenant storefront from BootandStrap template. Connects to Medusa v2 (commerce), 
 
 **Your job**: customize look, feel, content, branding.
 **Not your job**: commerce engine, auth, governance, API layer.
+
+### Control-plane boundary
+
+- `BOOTANDSTRAP_WEB` owns the SaaS control plane, lifecycle, deploy recovery, scheduled termination and final tenant termination semantics.
+- `store-campifruit` is a tenant runtime proof, not the owner of the admin/control plane.
+- A healthy Campifruit runtime proves this tenant can run; it is not evidence that full self-service onboarding or the complete control plane is finished.
+- Keep manual DNS, credentials, branding, catalog, handoff or recovery steps explicit. Do not call them automatic unless the control plane executes them end to end.
+- `scheduled termination` is reversible offboarding before final cleanup. Final destructive termination is irreversible and not a restore path.
+- There is no persistent vault in the MVP; do not document credential retention as if it exists.
 
 ## 2. Zone Map
 
@@ -192,7 +201,7 @@ Flags are **auto-derived** from `contract.modules.catalog[].tiers[].flag_effects
 
 ## 11. Governance Contract
 
-- **SSOT**: `apps/storefront/src/lib/governance-contract.json` (82 flags, 32 limits, 13 modules)
+- **SSOT**: `apps/storefront/src/lib/governance-contract.json` (83 flags, 31 limits, 13 modules)
 - **Audit**: `npx tsx scripts/audit-governance-ui.ts --strict` → must return 100%
 - **Module prices**: `contract.modules.catalog[].tiers[].price_chf` → never hardcode CHF values
 - **Custom modules**: POS, CRM, Email Marketing, Automation, Product Reviews — all auto-migrated via `docker-entrypoint.sh`
